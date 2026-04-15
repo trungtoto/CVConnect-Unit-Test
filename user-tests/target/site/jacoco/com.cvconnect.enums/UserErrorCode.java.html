@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserErrorCode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.enums</a> &gt; <span class="el_source">UserErrorCode.java</span></div><h1>UserErrorCode.java</h1><pre class="source lang-java linenums">package com.cvconnect.enums;
+
+import com.cvconnect.constant.Messages;
+import nmquan.commonlib.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
+
+<span class="fc" id="L7">public enum UserErrorCode implements ErrorCode {</span>
+<span class="fc" id="L8">    LOGIN_FAIL(1001, Messages.LOGIN_FAILED, HttpStatus.UNAUTHORIZED),</span>
+<span class="fc" id="L9">    ROLE_NOT_FOUND(1002, Messages.ROLE_NOT_FOUND, HttpStatus.NOT_FOUND),</span>
+<span class="fc" id="L10">    USER_NOT_FOUND(1003, Messages.USER_NOT_FOUND, HttpStatus.NOT_FOUND),</span>
+<span class="fc" id="L11">    EMAIL_NOT_VERIFIED(1004, Messages.EMAIL_NOT_VERIFIED, HttpStatus.UNAUTHORIZED),</span>
+<span class="fc" id="L12">    USERNAME_NOT_EXISTS(1005, Messages.USERNAME_NOT_EXISTS, HttpStatus.NOT_FOUND),</span>
+<span class="fc" id="L13">    ACCOUNT_NOT_ACTIVE(1006, Messages.ACCOUNT_NOT_ACTIVE, HttpStatus.UNAUTHORIZED),</span>
+<span class="fc" id="L14">    USERNAME_EXISTS(1007, Messages.USERNAME_EXISTS, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L15">    EMAIL_EXISTS(1008, Messages.EMAIL_EXISTS, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L16">    ROLE_CODE_EXISTED(1009, Messages.ROLE_CODE_EXISTED, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L17">    MENU_NOT_FOUND(1010, Messages.MENU_NOT_FOUND, HttpStatus.NOT_FOUND),</span>
+<span class="fc" id="L18">    CANNOT_DELETE_ROLE(1011, Messages.CANNOT_DELETE_ROLE, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L19">    USER_ALREADY_VERIFIED(1012, Messages.USER_ALREADY_VERIFIED, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L20">    LOGO_REQUIRE(1013, Messages.LOGO_REQUIRE, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L21">    ACCOUNT_REGISTERED_AS_ORG_MEMBER(1014, Messages.ACCOUNT_REGISTERED_AS_ORG_MEMBER, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L22">    USER_JOINED_ORG(1015, Messages.USER_JOINED_ORG, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L23">    USER_BELONG_TO_ANOTHER_ORG(1016, Messages.USER_BELONG_TO_ANOTHER_ORG, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L24">    INVITE_NOT_FOUND(1017, Messages.INVITE_NOT_FOUND, HttpStatus.NOT_FOUND),</span>
+<span class="fc" id="L25">    STATUS_NOT_BLANK(1018, Messages.STATUS_NOT_BLANK, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L26">    ORG_MUST_HAVE_AT_LEAST_ONE_ADMIN(1019, Messages.ORG_MUST_HAVE_AT_LEAST_ONE_ADMIN, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L27">    REGISTER_THIRD_PARTY(1020, Messages.REGISTER_THIRD_PARTY, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L28">    CURRENT_PASSWORD_INCORRECT(1021, Messages.CURRENT_PASSWORD_INCORRECT, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L29">    IMAGE_FILE_INVALID(1022, Messages.IMAGE_FILE_INVALID, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L30">    DOCUMENT_FILE_INVALID(1023, Messages.DOCUMENT_FILE_INVALID, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L31">    USER_ALREADY_HAS_ROLE(1024, Messages.USER_ALREADY_HAS_ROLE, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L32">    USER_DOES_NOT_HAVE_ROLE(1025, Messages.USER_DOES_NOT_HAVE_ROLE, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L33">    LAST_SYSTEM_ADMIN_CANNOT_BE_REMOVED(1026, Messages.LAST_SYSTEM_ADMIN_CANNOT_BE_REMOVED, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L34">    CANNOT_REMOVE_OWN_SYSTEM_ADMIN_ROLE(1027, Messages.CANNOT_REMOVE_OWN_SYSTEM_ADMIN_ROLE, HttpStatus.BAD_REQUEST),</span>
+<span class="fc" id="L35">    USER_NOT_PHONE_NUMBER(1028, Messages.USER_NOT_PHONE_NUMBER, HttpStatus.NOT_FOUND),</span>
+<span class="fc" id="L36">    ORG_ADDRESS_AT_LEAST_ONE(1029, Messages.ORG_ADDRESS_AT_LEAST_ONE, HttpStatus.BAD_REQUEST)</span>
+    ;
+
+    private final Integer code;
+    private final String message;
+    private final HttpStatus statusCode;
+
+<span class="fc" id="L43">    UserErrorCode(Integer code, String message, HttpStatus statusCode) {</span>
+<span class="fc" id="L44">        this.code = code;</span>
+<span class="fc" id="L45">        this.message = message;</span>
+<span class="fc" id="L46">        this.statusCode = statusCode;</span>
+<span class="fc" id="L47">    }</span>
+
+    @Override
+    public HttpStatus getStatusCode() {
+<span class="nc" id="L51">        return statusCode;</span>
+    }
+    @Override
+    public Integer getCode() {
+<span class="nc" id="L55">        return code;</span>
+    }
+    @Override
+    public String getMessage() {
+<span class="fc" id="L59">        return message;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

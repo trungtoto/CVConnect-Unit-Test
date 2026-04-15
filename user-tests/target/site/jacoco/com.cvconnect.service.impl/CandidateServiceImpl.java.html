@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CandidateServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.service.impl</a> &gt; <span class="el_source">CandidateServiceImpl.java</span></div><h1>CandidateServiceImpl.java</h1><pre class="source lang-java linenums">package com.cvconnect.service.impl;
+
+import com.cvconnect.dto.candidate.CandidateDto;
+import com.cvconnect.entity.Candidate;
+import com.cvconnect.repository.CandidateRepository;
+import com.cvconnect.service.CandidateService;
+import nmquan.commonlib.exception.AppException;
+import nmquan.commonlib.exception.CommonErrorCode;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+<span class="nc" id="L17">public class CandidateServiceImpl implements CandidateService {</span>
+    @Autowired
+    private CandidateRepository candidateRepository;
+
+    @Override
+    public void createCandidate(CandidateDto dto) {
+<span class="nc" id="L23">        Candidate candidate = new Candidate();</span>
+<span class="nc" id="L24">        candidate.setUserId(dto.getUserId());</span>
+<span class="nc" id="L25">        candidateRepository.save(candidate);</span>
+<span class="nc" id="L26">    }</span>
+
+    @Override
+    public CandidateDto getCandidate(Long userId) {
+<span class="nc" id="L30">        Optional&lt;Candidate&gt; candidate = candidateRepository.findByUserId(userId);</span>
+<span class="nc" id="L31">        Candidate entity = candidate.orElse(null);</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if(entity == null) {</span>
+<span class="nc" id="L33">            return null;</span>
+        }
+<span class="nc" id="L35">        return CandidateDto.builder()</span>
+<span class="nc" id="L36">                .id(entity.getId())</span>
+<span class="nc" id="L37">                .userId(entity.getUserId())</span>
+<span class="nc" id="L38">                .build();</span>
+    }
+
+    @Override
+    public Long numberOfNewCandidate(Map&lt;String, Object&gt; filter) {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        Instant startTime = Instant.ofEpochSecond(filter.get(&quot;startTime&quot;) instanceof Number</span>
+<span class="nc" id="L44">                ? ((Number) filter.get(&quot;startTime&quot;)).longValue()</span>
+<span class="nc" id="L45">                : Double.valueOf(filter.get(&quot;startTime&quot;).toString()).longValue());</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if(startTime == null) {</span>
+<span class="nc" id="L47">            throw new AppException(CommonErrorCode.INVALID_FORMAT);</span>
+        }
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        Instant endTime = Instant.ofEpochSecond(filter.get(&quot;endTime&quot;) instanceof Number</span>
+<span class="nc" id="L50">                ? ((Number) filter.get(&quot;endTime&quot;)).longValue()</span>
+<span class="nc" id="L51">                : Double.valueOf(filter.get(&quot;endTime&quot;).toString()).longValue());</span>
+
+<span class="nc" id="L53">        return candidateRepository.numberOfNewCandidate(startTime, endTime);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

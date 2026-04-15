@@ -1,0 +1,635 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.service.impl</a> &gt; <span class="el_source">AuthServiceImpl.java</span></div><h1>AuthServiceImpl.java</h1><pre class="source lang-java linenums">package com.cvconnect.service.impl;
+
+import com.cvconnect.common.RestTemplateClient;
+import com.cvconnect.dto.common.NotificationDto;
+import com.cvconnect.dto.common.TokenInfo;
+import com.cvconnect.dto.failedRollback.FailedRollbackDto;
+import com.cvconnect.dto.failedRollback.FailedRollbackOrgCreation;
+import com.cvconnect.dto.orgMember.OrgMemberDto;
+import com.cvconnect.enums.*;
+import com.cvconnect.utils.JwtUtils;
+import com.cvconnect.constant.Constants;
+import com.cvconnect.dto.auth.*;
+import com.cvconnect.dto.candidate.CandidateDto;
+import com.cvconnect.dto.role.RoleDto;
+import com.cvconnect.dto.roleUser.RoleUserDto;
+import com.cvconnect.dto.user.UserDto;
+import com.cvconnect.service.*;
+import com.cvconnect.utils.CookieUtils;
+import com.cvconnect.utils.RedisUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import nmquan.commonlib.dto.request.ObjectAndFileRequest;
+import nmquan.commonlib.dto.response.IDResponse;
+import nmquan.commonlib.enums.EmailTemplateEnum;
+import nmquan.commonlib.exception.AppException;
+import nmquan.commonlib.exception.CommonErrorCode;
+import nmquan.commonlib.exception.ErrorCode;
+import nmquan.commonlib.model.JwtUser;
+import nmquan.commonlib.service.SendEmailService;
+import nmquan.commonlib.utils.KafkaUtils;
+import nmquan.commonlib.utils.LocalizationUtils;
+import nmquan.commonlib.utils.ObjectMapperUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+<span class="nc" id="L50">public class AuthServiceImpl implements AuthService {</span>
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private RoleUserService roleUserService;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private JwtUtils jwtUtils;
+    @Autowired
+    private RedisUtils redisUtils;
+    @Autowired
+    private RoleService roleService;
+    @Autowired
+    private CandidateService candidateService;
+    @Autowired
+    private LocalizationUtils localizationUtils;
+    @Autowired
+    private RedisUtils redis;
+    @Autowired
+    private SendEmailService sendEmailService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private RestTemplateClient restTemplateClient;
+    @Autowired
+    private OrgMemberService orgMemberService;
+    @Autowired
+    private KafkaUtils kafkaUtils;
+    @Autowired
+    private FailedRollbackService failedRollbackService;
+
+    @Value(&quot;${jwt.refresh-expiration}&quot;)
+    private int JWT_REFRESHABLE_DURATION;
+    @Value(&quot;${jwt.secret-key}&quot;)
+    private String SECRET_KEY;
+    @Value(&quot;${jwt.verify-expiration}&quot;)
+    private int JWT_VERIFY_EMAIL_DURATION;
+    @Value(&quot;${jwt.reset-password-expiration}&quot;)
+    private int JWT_RESET_PASSWORD_DURATION;
+    @Value(&quot;${frontend.url}&quot;)
+    private String FRONTEND_URL;
+
+    @Transactional
+    @Override
+    public LoginResponse login(LoginRequest loginRequest, HttpServletResponse httpServletResponse) {
+<span class="nc" id="L96">        UserDto user = userService.findByUsername(loginRequest.getUsername());</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L98">            throw new AppException(UserErrorCode.LOGIN_FAIL);</span>
+        }
+<span class="nc" id="L100">        this.checkAccountStatus(user);</span>
+<span class="nc" id="L101">        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(</span>
+<span class="nc" id="L102">                loginRequest.getUsername(), loginRequest.getPassword()</span>
+        );
+        try {
+<span class="nc" id="L105">            authenticationManager.authenticate(authenticationToken);</span>
+<span class="nc" id="L106">        } catch (BadCredentialsException ex) {</span>
+<span class="nc" id="L107">            throw new AppException(UserErrorCode.LOGIN_FAIL);</span>
+<span class="nc" id="L108">        }</span>
+
+<span class="nc" id="L110">        List&lt;RoleUserDto&gt; roleUserDtos = roleUserService.findRoleUseByUserId(user.getId());</span>
+<span class="nc" id="L111">        OrgMemberDto orgMemberDto = orgMemberService.getOrgMember(user.getId());</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if(Objects.nonNull(orgMemberDto)){</span>
+<span class="nc" id="L113">            user.setOrgId(orgMemberDto.getOrgId());</span>
+        }
+<span class="nc" id="L115">        LoginResponse loginResponse = LoginResponse.builder()</span>
+<span class="nc" id="L116">                .token(jwtUtils.generateToken(user))</span>
+<span class="nc" id="L117">                .roles(roleUserDtos.stream().map(RoleUserDto::getRole).collect(Collectors.toList()))</span>
+<span class="nc" id="L118">                .build();</span>
+
+<span class="nc" id="L120">        String refreshToken = jwtUtils.generateRefreshToken();</span>
+<span class="nc" id="L121">        this.saveToken(user.getId(), TokenType.REFRESH, refreshToken, JWT_REFRESHABLE_DURATION);</span>
+<span class="nc" id="L122">        CookieUtils.setRefreshTokenCookie(refreshToken, JWT_REFRESHABLE_DURATION, httpServletResponse);</span>
+
+<span class="nc" id="L124">        return loginResponse;</span>
+    }
+
+    @Override
+    public RefreshTokenResponse refreshToken(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+<span class="nc" id="L129">        String rfToken = CookieUtils.getRefreshTokenCookie(httpServletRequest);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (rfToken == null) {</span>
+<span class="nc" id="L131">            CookieUtils.deleteRefreshTokenCookie(httpServletResponse);</span>
+<span class="nc" id="L132">            throw new AppException(CommonErrorCode.UNAUTHENTICATED);</span>
+        }
+
+<span class="nc" id="L135">        String refreshTokenKey = redisUtils.getTokenKey(rfToken);</span>
+<span class="nc" id="L136">        TokenInfo tokenInfo = redisUtils.getObject(refreshTokenKey, TokenInfo.class);</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (tokenInfo == null) {</span>
+<span class="nc" id="L138">            CookieUtils.deleteRefreshTokenCookie(httpServletResponse);</span>
+<span class="nc" id="L139">            throw new AppException(CommonErrorCode.UNAUTHENTICATED);</span>
+        }
+<span class="nc" id="L141">        redisUtils.deleteByKey(refreshTokenKey);</span>
+
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (!TokenType.REFRESH.equals(tokenInfo.getType())) {</span>
+<span class="nc" id="L144">            CookieUtils.deleteRefreshTokenCookie(httpServletResponse);</span>
+<span class="nc" id="L145">            throw new AppException(CommonErrorCode.UNAUTHENTICATED);</span>
+        }
+
+<span class="nc" id="L148">        UserDto user = userService.findById(tokenInfo.getUserId());</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L150">            CookieUtils.deleteRefreshTokenCookie(httpServletResponse);</span>
+<span class="nc" id="L151">            throw new AppException(CommonErrorCode.UNAUTHENTICATED);</span>
+        }
+<span class="nc" id="L153">        this.checkAccountStatus(user);</span>
+<span class="nc" id="L154">        String newRefreshToken = jwtUtils.generateRefreshToken();</span>
+<span class="nc" id="L155">        redisUtils.saveObject(redisUtils.getTokenKey(newRefreshToken), tokenInfo, JWT_REFRESHABLE_DURATION);</span>
+<span class="nc" id="L156">        CookieUtils.setRefreshTokenCookie(newRefreshToken, JWT_REFRESHABLE_DURATION, httpServletResponse);</span>
+
+<span class="nc" id="L158">        List&lt;RoleUserDto&gt; roleUserDtos = roleUserService.findRoleUseByUserId(user.getId());</span>
+
+<span class="nc" id="L160">        OrgMemberDto orgMemberDto = orgMemberService.getOrgMember(user.getId());</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if(Objects.nonNull(orgMemberDto)){</span>
+<span class="nc" id="L162">            user.setOrgId(orgMemberDto.getOrgId());</span>
+        }
+<span class="nc" id="L164">        return RefreshTokenResponse.builder()</span>
+<span class="nc" id="L165">                .token(jwtUtils.generateToken(user))</span>
+<span class="nc" id="L166">                .roles(roleUserDtos.stream().map(RoleUserDto::getRole).collect(Collectors.toList()))</span>
+<span class="nc" id="L167">                .build();</span>
+    }
+
+    @Override
+    public void logout(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+<span class="nc" id="L172">        String rfToken = CookieUtils.getRefreshTokenCookie(httpServletRequest);</span>
+<span class="nc" id="L173">        CookieUtils.deleteRefreshTokenCookie(httpServletResponse);</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (rfToken != null) {</span>
+<span class="nc" id="L175">            redisUtils.deleteByKey(rfToken);</span>
+        }
+<span class="nc" id="L177">    }</span>
+
+    @Transactional
+    @Override
+    public RegisterCandidateResponse registerCandidate(RegisterCandidateRequest request) {
+<span class="nc" id="L182">        UserDto existsByUsername = userService.findByUsername(request.getUsername());</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (existsByUsername != null) {</span>
+<span class="nc" id="L184">            throw new AppException(UserErrorCode.USERNAME_EXISTS);</span>
+        }
+
+<span class="nc" id="L187">        UserDto existsByEmail = userService.findByEmail(request.getEmail());</span>
+<span class="nc" id="L188">        RoleDto roleCandidate = roleService.getRoleByCode(Constants.RoleCode.CANDIDATE);</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if(roleCandidate == null) {</span>
+<span class="nc" id="L190">            throw new AppException(CommonErrorCode.ERROR);</span>
+        }
+
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        if(existsByEmail == null) {</span>
+<span class="nc" id="L194">            UserDto userDto = UserDto.builder()</span>
+<span class="nc" id="L195">                    .username(request.getUsername())</span>
+<span class="nc" id="L196">                    .password(passwordEncoder.encode(request.getPassword()))</span>
+<span class="nc" id="L197">                    .email(request.getEmail())</span>
+<span class="nc" id="L198">                    .fullName(request.getFullName())</span>
+<span class="nc" id="L199">                    .accessMethod(AccessMethod.LOCAL.name())</span>
+<span class="nc" id="L200">                    .isEmailVerified(false)</span>
+<span class="nc" id="L201">                    .build();</span>
+<span class="nc" id="L202">            userDto = userService.create(userDto);</span>
+<span class="nc" id="L203">            this.createCandidateForUser(userDto.getId(), roleCandidate.getId());</span>
+
+            // send email require verification
+<span class="nc" id="L206">            this.sendRequestVerifyEmail(userDto);</span>
+
+<span class="nc" id="L208">            return RegisterCandidateResponse.builder()</span>
+<span class="nc" id="L209">                    .id(userDto.getId())</span>
+<span class="nc" id="L210">                    .username(userDto.getUsername())</span>
+<span class="nc" id="L211">                    .needVerifyEmail(true)</span>
+<span class="nc" id="L212">                    .duration((long) JWT_VERIFY_EMAIL_DURATION)</span>
+<span class="nc" id="L213">                    .build();</span>
+        } else {
+            /*
+            * Only update when created from OAuth2 and not have password
+            * */
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if(existsByEmail.getPassword() != null){</span>
+<span class="nc" id="L219">                throw new AppException(UserErrorCode.EMAIL_EXISTS);</span>
+            }
+<span class="nc" id="L221">            List&lt;String&gt; providers = new ArrayList&lt;&gt;(Arrays.asList(existsByEmail.getAccessMethod().split(&quot;,&quot;)));</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">            if (providers.contains(AccessMethod.LOCAL.name())) {</span>
+<span class="nc" id="L223">                throw new AppException(UserErrorCode.EMAIL_EXISTS);</span>
+            }
+<span class="nc" id="L225">            providers.add(AccessMethod.LOCAL.name());</span>
+
+<span class="nc" id="L227">            RoleUserDto roleUserDto = roleUserService.findByUserIdAndRoleId(existsByEmail.getId(), roleCandidate.getId());</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">            if (roleUserDto == null) {</span>
+<span class="nc" id="L229">                this.createCandidateForUser(existsByEmail.getId(), roleCandidate.getId());</span>
+            }
+
+<span class="nc" id="L232">            existsByEmail.setUsername(request.getUsername());</span>
+<span class="nc" id="L233">            existsByEmail.setPassword(passwordEncoder.encode(request.getPassword()));</span>
+<span class="nc" id="L234">            existsByEmail.setFullName(request.getFullName());</span>
+<span class="nc" id="L235">            existsByEmail.setAccessMethod(String.join(&quot;,&quot;, providers));</span>
+<span class="nc" id="L236">            userService.create(existsByEmail);</span>
+<span class="nc" id="L237">            return RegisterCandidateResponse.builder()</span>
+<span class="nc" id="L238">                    .id(existsByEmail.getId())</span>
+<span class="nc" id="L239">                    .username(existsByEmail.getUsername())</span>
+<span class="nc" id="L240">                    .needVerifyEmail(false)</span>
+<span class="nc" id="L241">                    .build();</span>
+        }
+    }
+
+    @Override
+    @Transactional
+    public RegisterOrgAdminResponse registerOrgAdmin(RegisterOrgAdminRequest request, MultipartFile logo, MultipartFile coverPhoto) {
+<span class="nc" id="L248">        UserDto existsByUsername = userService.findByUsername(request.getUsername());</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">        if (existsByUsername != null) {</span>
+<span class="nc" id="L250">            throw new AppException(UserErrorCode.USERNAME_EXISTS);</span>
+        }
+
+<span class="nc" id="L253">        UserDto existsByEmail = userService.findByEmail(request.getEmail());</span>
+<span class="nc" id="L254">        RoleDto roleOrgAdmin = roleService.getRoleByCode(Constants.RoleCode.ORG_ADMIN);</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if(roleOrgAdmin == null) {</span>
+<span class="nc" id="L256">            throw new AppException(CommonErrorCode.ERROR);</span>
+        }
+<span class="nc" id="L258">        List&lt;UserDto&gt; orgAdmins = userService.findAllSystemAdmin();</span>
+<span class="nc" id="L259">        List&lt;Long&gt; systemAdminIds = orgAdmins.stream().map(UserDto::getId).toList();</span>
+
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        if(existsByEmail == null) {</span>
+<span class="nc" id="L262">            Long orgId = null;</span>
+            try{
+                // create account org-admin
+<span class="nc" id="L265">                UserDto userDto = UserDto.builder()</span>
+<span class="nc" id="L266">                        .username(request.getUsername())</span>
+<span class="nc" id="L267">                        .password(passwordEncoder.encode(request.getPassword()))</span>
+<span class="nc" id="L268">                        .email(request.getEmail())</span>
+<span class="nc" id="L269">                        .fullName(request.getFullName())</span>
+<span class="nc" id="L270">                        .accessMethod(AccessMethod.LOCAL.name())</span>
+<span class="nc" id="L271">                        .isEmailVerified(false)</span>
+<span class="nc" id="L272">                        .build();</span>
+<span class="nc" id="L273">                userDto = userService.create(userDto);</span>
+
+<span class="nc" id="L275">                RoleDto roleCandidate = roleService.getRoleByCode(Constants.RoleCode.CANDIDATE);</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                if(roleCandidate == null){</span>
+<span class="nc" id="L277">                    throw new AppException(UserErrorCode.ROLE_NOT_FOUND);</span>
+                }
+
+                // create organization
+<span class="nc" id="L281">                request.getOrganization().setCreatedBy(request.getUsername());</span>
+<span class="nc" id="L282">                IDResponse&lt;Long&gt; orgResponse = this.createOrg(request.getOrganization(), logo, coverPhoto);</span>
+<span class="nc" id="L283">                orgId = orgResponse.getId();</span>
+
+                // create org-member as org-admin
+<span class="nc" id="L286">                this.createOrgMemberForUser(userDto.getId(), roleOrgAdmin.getId(), roleCandidate.getId(), orgId);</span>
+
+                // send notify to system-admin
+<span class="nc" id="L289">                NotifyTemplate template = NotifyTemplate.NEW_ORGANIZATION_CREATED;</span>
+<span class="nc" id="L290">                NotificationDto notificationDto = NotificationDto.builder()</span>
+<span class="nc" id="L291">                        .title(String.format(template.getTitle()))</span>
+<span class="nc" id="L292">                        .message(String.format(template.getMessage(), request.getOrganization().getName(), userDto.getFullName()))</span>
+<span class="nc" id="L293">                        .type(Constants.NotificationType.USER)</span>
+<span class="nc" id="L294">                        .redirectUrl(Constants.Path.ORG_LIST + &quot;?targetId=&quot; + orgResponse.getId())</span>
+<span class="nc" id="L295">                        .senderId(userDto.getId())</span>
+<span class="nc" id="L296">                        .receiverIds(systemAdminIds)</span>
+<span class="nc" id="L297">                        .receiverType(MemberType.MANAGEMENT.getName())</span>
+<span class="nc" id="L298">                        .build();</span>
+<span class="nc" id="L299">                kafkaUtils.sendWithJson(Constants.KafkaTopic.NOTIFICATION, notificationDto);</span>
+
+                // send email require verification
+<span class="nc" id="L302">                String token = jwtUtils.generateTokenVerifyEmail();</span>
+<span class="nc" id="L303">                Map&lt;String, String&gt; dataPlaceHolders = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L304">                dataPlaceHolders.put(&quot;orgName&quot;, request.getOrganization().getName());</span>
+<span class="nc" id="L305">                dataPlaceHolders.put(&quot;verifyUrl&quot;, FRONTEND_URL + Constants.Path.VERIFY_EMAIL + &quot;?token=&quot; + token);</span>
+<span class="nc" id="L306">                dataPlaceHolders.put(&quot;year&quot;, String.valueOf(LocalDate.now().getYear()));</span>
+<span class="nc" id="L307">                sendEmailService.sendEmailWithTemplate(</span>
+<span class="nc" id="L308">                        List.of(userDto.getEmail()),</span>
+                        null,
+                        EmailTemplateEnum.VERIFY_ORG_EMAIL,
+                        dataPlaceHolders
+                );
+<span class="nc" id="L313">                this.saveToken(userDto.getId(), TokenType.VERIFY_EMAIL, token, JWT_VERIFY_EMAIL_DURATION);</span>
+
+<span class="nc" id="L315">                return RegisterOrgAdminResponse.builder()</span>
+<span class="nc" id="L316">                        .id(userDto.getId())</span>
+<span class="nc" id="L317">                        .username(userDto.getUsername())</span>
+<span class="nc" id="L318">                        .needVerifyEmail(true)</span>
+<span class="nc" id="L319">                        .duration((long) JWT_VERIFY_EMAIL_DURATION)</span>
+<span class="nc" id="L320">                        .build();</span>
+<span class="nc" id="L321">            } catch (Exception exception){</span>
+<span class="nc" id="L322">                FailedRollbackOrgCreation payload = FailedRollbackOrgCreation.builder()</span>
+<span class="nc" id="L323">                        .orgId(orgId)</span>
+<span class="nc" id="L324">                        .build();</span>
+                try{
+<span class="nc bnc" id="L326" title="All 2 branches missed.">                    if(orgId != null){</span>
+<span class="nc" id="L327">                        restTemplateClient.deleteOrg(payload);</span>
+                    }
+<span class="nc" id="L329">                } catch (Exception e){</span>
+<span class="nc" id="L330">                    failedRollbackService.save(</span>
+<span class="nc" id="L331">                            FailedRollbackDto.builder()</span>
+<span class="nc" id="L332">                                    .type(FailedRollbackType.ORG_CREATION.getType())</span>
+<span class="nc" id="L333">                                    .payload(ObjectMapperUtils.convertToJson(payload))</span>
+<span class="nc" id="L334">                                    .errorMessage(e.getMessage())</span>
+<span class="nc" id="L335">                                    .status(false)</span>
+<span class="nc" id="L336">                                    .retryCount(0)</span>
+<span class="nc" id="L337">                                    .build()</span>
+                    );
+                } finally {
+<span class="nc" id="L340">                    throw exception;</span>
+                }
+            }
+        } else {
+            /*
+             * Only update when created from OAuth2 and not have password and not registered as org-member
+             * */
+<span class="nc" id="L347">            Long orgId = null;</span>
+            try{
+<span class="nc bnc" id="L349" title="All 2 branches missed.">                if(existsByEmail.getPassword() != null){</span>
+<span class="nc" id="L350">                    throw new AppException(UserErrorCode.EMAIL_EXISTS);</span>
+                }
+<span class="nc" id="L352">                List&lt;String&gt; providers = new ArrayList&lt;&gt;(Arrays.asList(existsByEmail.getAccessMethod().split(&quot;,&quot;)));</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">                if (providers.contains(AccessMethod.LOCAL.name())) {</span>
+<span class="nc" id="L354">                    throw new AppException(UserErrorCode.EMAIL_EXISTS);</span>
+                }
+<span class="nc" id="L356">                providers.add(AccessMethod.LOCAL.name());</span>
+
+<span class="nc" id="L358">                boolean existsOrgMember = orgMemberService.existsByUserId(existsByEmail.getId());</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">                if(existsOrgMember) {</span>
+<span class="nc" id="L360">                    throw new AppException(UserErrorCode.ACCOUNT_REGISTERED_AS_ORG_MEMBER);</span>
+                }
+
+                // create account org-admin
+<span class="nc" id="L364">                existsByEmail.setUsername(request.getUsername());</span>
+<span class="nc" id="L365">                existsByEmail.setPassword(passwordEncoder.encode(request.getPassword()));</span>
+<span class="nc" id="L366">                existsByEmail.setFullName(request.getFullName());</span>
+<span class="nc" id="L367">                existsByEmail.setAccessMethod(String.join(&quot;,&quot;, providers));</span>
+<span class="nc" id="L368">                userService.create(existsByEmail);</span>
+
+                // create organization
+<span class="nc" id="L371">                request.getOrganization().setCreatedBy(request.getUsername());</span>
+<span class="nc" id="L372">                IDResponse&lt;Long&gt; orgResponse = this.createOrg(request.getOrganization(), logo, coverPhoto);</span>
+
+                // create org-member as org-admin
+<span class="nc" id="L375">                this.createOrgMemberForUser(existsByEmail.getId(), roleOrgAdmin.getId(), null, orgResponse.getId());</span>
+
+                // send notify to system-admin
+<span class="nc" id="L378">                NotifyTemplate template = NotifyTemplate.NEW_ORGANIZATION_CREATED;</span>
+<span class="nc" id="L379">                NotificationDto notificationDto = NotificationDto.builder()</span>
+<span class="nc" id="L380">                        .title(String.format(template.getTitle()))</span>
+<span class="nc" id="L381">                        .message(String.format(template.getMessage(), request.getOrganization().getName(), existsByEmail.getFullName()))</span>
+<span class="nc" id="L382">                        .type(Constants.NotificationType.USER)</span>
+<span class="nc" id="L383">                        .redirectUrl(Constants.Path.ORG_LIST + &quot;?targetId=&quot; + orgResponse.getId())</span>
+<span class="nc" id="L384">                        .senderId(existsByEmail.getId())</span>
+<span class="nc" id="L385">                        .receiverIds(systemAdminIds)</span>
+<span class="nc" id="L386">                        .receiverType(MemberType.MANAGEMENT.getName())</span>
+<span class="nc" id="L387">                        .build();</span>
+<span class="nc" id="L388">                kafkaUtils.sendWithJson(Constants.KafkaTopic.NOTIFICATION, notificationDto);</span>
+
+<span class="nc" id="L390">                return RegisterOrgAdminResponse.builder()</span>
+<span class="nc" id="L391">                        .id(existsByEmail.getId())</span>
+<span class="nc" id="L392">                        .username(existsByEmail.getUsername())</span>
+<span class="nc" id="L393">                        .needVerifyEmail(false)</span>
+<span class="nc" id="L394">                        .build();</span>
+<span class="nc" id="L395">            } catch (Exception exception){</span>
+<span class="nc" id="L396">                FailedRollbackOrgCreation payload = FailedRollbackOrgCreation.builder()</span>
+<span class="nc" id="L397">                        .orgId(orgId)</span>
+<span class="nc" id="L398">                        .build();</span>
+                try{
+<span class="nc bnc" id="L400" title="All 2 branches missed.">                    if(orgId != null){</span>
+<span class="nc" id="L401">                        restTemplateClient.deleteOrg(payload);</span>
+                    }
+<span class="nc" id="L403">                } catch (Exception e){</span>
+<span class="nc" id="L404">                    failedRollbackService.save(</span>
+<span class="nc" id="L405">                            FailedRollbackDto.builder()</span>
+<span class="nc" id="L406">                                    .type(FailedRollbackType.ORG_CREATION.getType())</span>
+<span class="nc" id="L407">                                    .payload(ObjectMapperUtils.convertToJson(payload))</span>
+<span class="nc" id="L408">                                    .errorMessage(e.getMessage())</span>
+<span class="nc" id="L409">                                    .status(false)</span>
+<span class="nc" id="L410">                                    .retryCount(0)</span>
+<span class="nc" id="L411">                                    .build()</span>
+                    );
+                } finally {
+<span class="nc" id="L414">                    throw exception;</span>
+                }
+            }
+        }
+    }
+
+    @Override
+    public VerifyResponse verify(VerifyRequest verifyRequest) {
+        try {
+<span class="nc" id="L423">            JwtUser jwtUser = nmquan.commonlib.utils.JwtUtils.validate(verifyRequest.getToken(), SECRET_KEY);</span>
+<span class="nc" id="L424">            UserDto userDto = userService.findByUsername(jwtUser.getUsername());</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">            if(userDto == null) {</span>
+<span class="nc" id="L426">                return this.buildErrorResponse(UserErrorCode.USER_NOT_FOUND);</span>
+            }
+<span class="nc" id="L428">            this.checkAccountStatus(userDto);</span>
+<span class="nc" id="L429">            return VerifyResponse.builder()</span>
+<span class="nc" id="L430">                    .isValid(true)</span>
+<span class="nc" id="L431">                    .status(HttpStatus.OK)</span>
+<span class="nc" id="L432">                    .code(1000)</span>
+<span class="nc" id="L433">                    .build();</span>
+<span class="nc" id="L434">        }catch (AppException e){</span>
+<span class="nc" id="L435">            return this.buildErrorResponse(e.getErrorCode(), e.getParams());</span>
+<span class="nc" id="L436">        }catch (Exception e) {</span>
+<span class="nc" id="L437">            return this.buildErrorResponse(CommonErrorCode.ERROR);</span>
+        }
+    }
+
+    @Override
+    public RequestResendVerifyEmailResponse requestResendVerifyEmail(String identifier) {
+<span class="nc" id="L443">        UserDto userDto = userService.findByUsername(identifier);</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        if (userDto == null) {</span>
+<span class="nc" id="L445">            userDto = userService.findByEmail(identifier);</span>
+        }
+<span class="nc bnc" id="L447" title="All 2 branches missed.">        if(userDto == null) {</span>
+<span class="nc" id="L448">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc bnc" id="L450" title="All 2 branches missed.">        if(Boolean.TRUE.equals(userDto.getIsEmailVerified())) {</span>
+<span class="nc" id="L451">            throw new AppException(UserErrorCode.USER_ALREADY_VERIFIED);</span>
+        }
+<span class="nc" id="L453">        this.sendRequestVerifyEmail(userDto);</span>
+<span class="nc" id="L454">        return RequestResendVerifyEmailResponse.builder()</span>
+<span class="nc" id="L455">                .email(userDto.getEmail())</span>
+<span class="nc" id="L456">                .duration((long) JWT_VERIFY_EMAIL_DURATION)</span>
+<span class="nc" id="L457">                .build();</span>
+    }
+
+    @Override
+    public VerifyEmailResponse verifyEmail(String token) {
+<span class="nc" id="L462">        String tokenKey = redisUtils.getTokenKey(token);</span>
+<span class="nc" id="L463">        TokenInfo tokenInfo = redisUtils.getObject(tokenKey, TokenInfo.class);</span>
+<span class="nc bnc" id="L464" title="All 2 branches missed.">        if (tokenInfo == null) {</span>
+<span class="nc" id="L465">            throw new AppException(CommonErrorCode.UNAUTHENTICATED);</span>
+        }
+<span class="nc bnc" id="L467" title="All 2 branches missed.">        if(!TokenType.VERIFY_EMAIL.equals(tokenInfo.getType())) {</span>
+<span class="nc" id="L468">            throw new AppException(CommonErrorCode.UNAUTHENTICATED);</span>
+        }
+<span class="nc" id="L470">        UserDto userDto = userService.findById(tokenInfo.getUserId());</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">        if (userDto == null) {</span>
+<span class="nc" id="L472">            redisUtils.deleteByKey(tokenKey);</span>
+<span class="nc" id="L473">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc bnc" id="L475" title="All 2 branches missed.">        if(Boolean.TRUE.equals(userDto.getIsEmailVerified())) {</span>
+<span class="nc" id="L476">            redisUtils.deleteByKey(tokenKey);</span>
+<span class="nc" id="L477">            throw new AppException(UserErrorCode.USER_ALREADY_VERIFIED);</span>
+        }
+<span class="nc" id="L479">        userService.updateEmailVerified(userDto.getId(), true);</span>
+<span class="nc" id="L480">        redisUtils.deleteByKey(tokenKey);</span>
+<span class="nc" id="L481">        return VerifyEmailResponse.builder()</span>
+<span class="nc" id="L482">                .username(userDto.getUsername())</span>
+<span class="nc" id="L483">                .build();</span>
+    }
+
+    @Override
+    public RequestResetPasswordResponse requestResetPassword(String identifier) {
+<span class="nc" id="L488">        UserDto userDto = userService.findByUsername(identifier);</span>
+<span class="nc bnc" id="L489" title="All 2 branches missed.">        if (userDto == null) {</span>
+<span class="nc" id="L490">            userDto = userService.findByEmail(identifier);</span>
+        }
+<span class="nc bnc" id="L492" title="All 2 branches missed.">        if(userDto == null) {</span>
+<span class="nc" id="L493">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc bnc" id="L495" title="All 2 branches missed.">        List&lt;String&gt; accessMethods = userDto.getAccessMethod() != null</span>
+<span class="nc" id="L496">                ? Arrays.asList(userDto.getAccessMethod().split(&quot;,&quot;))</span>
+<span class="nc" id="L497">                : Collections.emptyList();</span>
+<span class="nc bnc" id="L498" title="All 2 branches missed.">        if (!accessMethods.contains(AccessMethod.LOCAL.name())) {</span>
+<span class="nc" id="L499">            throw new AppException(UserErrorCode.REGISTER_THIRD_PARTY);</span>
+        }
+<span class="nc" id="L501">        this.checkAccountStatus(userDto);</span>
+        // send email reset password
+<span class="nc" id="L503">        String token = jwtUtils.generateTokenResetPassword();</span>
+<span class="nc" id="L504">        Map&lt;String, String&gt; dataPlaceHolders = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L505">        dataPlaceHolders.put(&quot;username&quot;, userDto.getUsername());</span>
+<span class="nc" id="L506">        dataPlaceHolders.put(&quot;resetUrl&quot;, FRONTEND_URL + Constants.Path.RESET_PASSWORD + &quot;?token=&quot; + token);</span>
+<span class="nc" id="L507">        dataPlaceHolders.put(&quot;year&quot;, String.valueOf(LocalDate.now().getYear()));</span>
+<span class="nc" id="L508">        sendEmailService.sendEmailWithTemplate(</span>
+<span class="nc" id="L509">                List.of(userDto.getEmail()),</span>
+                null,
+                EmailTemplateEnum.RESET_PASSWORD,
+                dataPlaceHolders
+        );
+<span class="nc" id="L514">        this.saveToken(userDto.getId(), TokenType.RESET_PASSWORD, token, JWT_RESET_PASSWORD_DURATION);</span>
+<span class="nc" id="L515">        return RequestResetPasswordResponse.builder()</span>
+<span class="nc" id="L516">                .email(userDto.getEmail())</span>
+<span class="nc" id="L517">                .duration((long) JWT_RESET_PASSWORD_DURATION)</span>
+<span class="nc" id="L518">                .build();</span>
+    }
+
+    @Override
+    public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
+<span class="nc" id="L523">        String tokenKey = redisUtils.getTokenKey(request.getToken());</span>
+<span class="nc" id="L524">        TokenInfo tokenInfo = redisUtils.getObject(tokenKey, TokenInfo.class);</span>
+<span class="nc bnc" id="L525" title="All 2 branches missed.">        if (tokenInfo == null) {</span>
+<span class="nc" id="L526">            throw new AppException(CommonErrorCode.UNAUTHENTICATED);</span>
+        }
+<span class="nc bnc" id="L528" title="All 2 branches missed.">        if(!TokenType.RESET_PASSWORD.equals(tokenInfo.getType())) {</span>
+<span class="nc" id="L529">            throw new AppException(CommonErrorCode.UNAUTHENTICATED);</span>
+        }
+<span class="nc" id="L531">        UserDto userDto = userService.findById(tokenInfo.getUserId());</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">        if (userDto == null) {</span>
+<span class="nc" id="L533">            redisUtils.deleteByKey(tokenKey);</span>
+<span class="nc" id="L534">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc" id="L536">        this.checkAccountStatus(userDto);</span>
+<span class="nc" id="L537">        userService.resetPassword(userDto.getId(), request.getNewPassword());</span>
+<span class="nc" id="L538">        redisUtils.deleteByKey(tokenKey);</span>
+<span class="nc" id="L539">        return ResetPasswordResponse.builder()</span>
+<span class="nc" id="L540">                .username(userDto.getUsername())</span>
+<span class="nc" id="L541">                .build();</span>
+    }
+
+    @Override
+    public void sendRequestVerifyEmail(UserDto userDto) {
+<span class="nc" id="L546">        String token = jwtUtils.generateTokenVerifyEmail();</span>
+<span class="nc" id="L547">        Map&lt;String, String&gt; dataPlaceHolders = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L548">        dataPlaceHolders.put(&quot;username&quot;, userDto.getFullName());</span>
+<span class="nc" id="L549">        dataPlaceHolders.put(&quot;verifyUrl&quot;, FRONTEND_URL + Constants.Path.VERIFY_EMAIL + &quot;?token=&quot; + token);</span>
+<span class="nc" id="L550">        dataPlaceHolders.put(&quot;year&quot;, String.valueOf(LocalDate.now().getYear()));</span>
+<span class="nc" id="L551">        sendEmailService.sendEmailWithTemplate(</span>
+<span class="nc" id="L552">                List.of(userDto.getEmail()),</span>
+                null,
+                EmailTemplateEnum.VERIFY_EMAIL,
+                dataPlaceHolders
+        );
+<span class="nc" id="L557">        this.saveToken(userDto.getId(), TokenType.VERIFY_EMAIL, token, JWT_VERIFY_EMAIL_DURATION);</span>
+<span class="nc" id="L558">    }</span>
+
+    private VerifyResponse buildErrorResponse(ErrorCode errorCode, Object... params) {
+<span class="nc" id="L561">        return VerifyResponse.builder()</span>
+<span class="nc" id="L562">                .isValid(false)</span>
+<span class="nc" id="L563">                .message(localizationUtils.getLocalizedMessage(errorCode.getMessage(), params))</span>
+<span class="nc" id="L564">                .status(errorCode.getStatusCode())</span>
+<span class="nc" id="L565">                .code(errorCode.getCode())</span>
+<span class="nc" id="L566">                .build();</span>
+    }
+
+    private void saveToken(Long userId, TokenType tokenType, String token, int duration){
+<span class="nc" id="L570">        TokenInfo tokenInfo = TokenInfo.builder()</span>
+<span class="nc" id="L571">                .userId(userId)</span>
+<span class="nc" id="L572">                .type(tokenType)</span>
+<span class="nc" id="L573">                .build();</span>
+<span class="nc" id="L574">        redis.saveObject(redis.getTokenKey(token), tokenInfo, duration);</span>
+<span class="nc" id="L575">    }</span>
+
+    private void checkAccountStatus(UserDto userDto){
+<span class="nc bnc" id="L578" title="All 2 branches missed.">        if (Boolean.FALSE.equals(userDto.getIsEmailVerified())) {</span>
+<span class="nc" id="L579">            throw new AppException(UserErrorCode.EMAIL_NOT_VERIFIED);</span>
+        }
+<span class="nc bnc" id="L581" title="All 2 branches missed.">        if (Boolean.FALSE.equals(userDto.getIsActive())) {</span>
+<span class="nc" id="L582">            throw new AppException(UserErrorCode.ACCOUNT_NOT_ACTIVE);</span>
+        }
+<span class="nc" id="L584">    }</span>
+
+    /**
+     * InternalRequest: core-service to create organization
+     * */
+    private IDResponse&lt;Long&gt; createOrg(OrganizationRequest orgRequest, MultipartFile logo, MultipartFile coverPhoto){
+<span class="nc" id="L590">        MultipartFile[] files = new MultipartFile[]{logo};</span>
+<span class="nc bnc" id="L591" title="All 2 branches missed.">        if(coverPhoto != null) {</span>
+<span class="nc" id="L592">            files = new MultipartFile[]{logo, coverPhoto};</span>
+        }
+<span class="nc bnc" id="L594" title="All 2 branches missed.">        if(ObjectUtils.isEmpty(orgRequest.getAddresses())){</span>
+<span class="nc" id="L595">            throw new AppException(UserErrorCode.ORG_ADDRESS_AT_LEAST_ONE);</span>
+        }
+<span class="nc" id="L597">        ObjectAndFileRequest&lt;OrganizationRequest&gt; request = ObjectAndFileRequest.&lt;OrganizationRequest&gt;builder()</span>
+<span class="nc" id="L598">                .data(orgRequest)</span>
+<span class="nc" id="L599">                .files(files)</span>
+<span class="nc" id="L600">                .build();</span>
+<span class="nc" id="L601">        return restTemplateClient.createOrg(request);</span>
+    }
+
+    private OrgMemberDto createOrgMemberForUser(Long userId, Long roleSystemAdminId, Long roleCandidateId, Long orgId){
+<span class="nc bnc" id="L605" title="All 2 branches missed.">        if(roleCandidateId != null){</span>
+<span class="nc" id="L606">            this.createCandidateForUser(userId, roleCandidateId);</span>
+        }
+
+<span class="nc" id="L609">        RoleUserDto roleUserDto = RoleUserDto.builder()</span>
+<span class="nc" id="L610">                .userId(userId)</span>
+<span class="nc" id="L611">                .roleId(roleSystemAdminId)</span>
+<span class="nc" id="L612">                .build();</span>
+<span class="nc" id="L613">        roleUserService.createRoleUser(roleUserDto);</span>
+
+<span class="nc" id="L615">        OrgMemberDto orgMemberDto = OrgMemberDto.builder()</span>
+<span class="nc" id="L616">                .userId(userId)</span>
+<span class="nc" id="L617">                .orgId(orgId)</span>
+<span class="nc" id="L618">                .build();</span>
+<span class="nc" id="L619">        return orgMemberService.createOrgMember(orgMemberDto);</span>
+    }
+
+    private void createCandidateForUser(Long userId, Long roleCandidateId){
+<span class="nc" id="L623">        RoleUserDto roleUserDto = RoleUserDto.builder()</span>
+<span class="nc" id="L624">                .userId(userId)</span>
+<span class="nc" id="L625">                .roleId(roleCandidateId)</span>
+<span class="nc" id="L626">                .build();</span>
+<span class="nc" id="L627">        roleUserService.createRoleUser(roleUserDto);</span>
+
+<span class="nc" id="L629">        CandidateDto candidateDto = CandidateDto.builder()</span>
+<span class="nc" id="L630">                .userId(userId)</span>
+<span class="nc" id="L631">                .build();</span>
+<span class="nc" id="L632">        candidateService.createCandidate(candidateDto);</span>
+<span class="nc" id="L633">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

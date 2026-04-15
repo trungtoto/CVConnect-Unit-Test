@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrgMemberController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.controller</a> &gt; <span class="el_source">OrgMemberController.java</span></div><h1>OrgMemberController.java</h1><pre class="source lang-java linenums">package com.cvconnect.controller;
+
+import com.cvconnect.constant.Messages;
+import com.cvconnect.dto.common.AssignRoleRequest;
+import com.cvconnect.dto.common.InviteUserRequest;
+import com.cvconnect.dto.common.ReplyInviteUserRequest;
+import com.cvconnect.dto.orgMember.FailedRollbackUpdateAccountStatus;
+import com.cvconnect.dto.orgMember.OrgMemberDto;
+import com.cvconnect.dto.orgMember.OrgMemberFilter;
+import com.cvconnect.service.OrgMemberService;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
+import nmquan.commonlib.annotation.InternalRequest;
+import nmquan.commonlib.constant.MessageConstants;
+import nmquan.commonlib.dto.request.ChangeStatusActiveRequest;
+import nmquan.commonlib.dto.response.FilterResponse;
+import nmquan.commonlib.dto.response.Response;
+import nmquan.commonlib.utils.LocalizationUtils;
+import nmquan.commonlib.utils.ResponseUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/org-member&quot;)
+<span class="nc" id="L29">public class OrgMemberController {</span>
+    @Autowired
+    private OrgMemberService orgMemberService;
+    @Autowired
+    private LocalizationUtils localizationUtils;
+
+    @PostMapping(&quot;/invite-join-org&quot;)
+    @Operation(summary = &quot;Invite user to join organization&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ORG_MEMBER:ADD')&quot;)
+    public ResponseEntity&lt;Response&lt;Void&gt;&gt; inviteUserToJoinOrg(@Valid @RequestBody InviteUserRequest request) {
+<span class="nc" id="L39">        orgMemberService.inviteUserToJoinOrg(request);</span>
+<span class="nc" id="L40">        return ResponseUtils.success(null, localizationUtils.getLocalizedMessage(Messages.SEND_INVITE_SUCCESS));</span>
+    }
+
+    @PostMapping(&quot;/reply-invite-join-org&quot;)
+    @Operation(summary = &quot;Reply invite join organization&quot;)
+    public ResponseEntity&lt;Response&lt;Void&gt;&gt; replyInviteJoinOrg(@Valid @RequestBody ReplyInviteUserRequest request) {
+<span class="nc" id="L46">        orgMemberService.replyInviteJoinOrg(request);</span>
+<span class="nc" id="L47">        return ResponseUtils.success(null);</span>
+    }
+
+    @GetMapping(&quot;/filter&quot;)
+    @Operation(summary = &quot;Filter organization members&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ORG_MEMBER:VIEW', 'HR')&quot;)
+    public ResponseEntity&lt;Response&lt;FilterResponse&lt;OrgMemberDto&gt;&gt;&gt; filterOrgMembers(@Valid @ModelAttribute OrgMemberFilter request) {
+<span class="nc" id="L54">        return ResponseUtils.success(orgMemberService.filter(request));</span>
+    }
+
+    @InternalRequest
+    @GetMapping(&quot;/internal/valid-org-member&quot;)
+    @Operation(summary = &quot;Check if the current user is a valid organization member&quot;)
+    public ResponseEntity&lt;Response&lt;Long&gt;&gt; isValidOrgMember() {
+<span class="nc" id="L61">        return ResponseUtils.success(orgMemberService.validOrgMember());</span>
+    }
+
+    @PutMapping(&quot;/assign-role&quot;)
+    @Operation(summary = &quot;Assign role to organization member&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ORG_MEMBER:ADD', 'ORG_MEMBER:UPDATE')&quot;)
+    public ResponseEntity&lt;Response&lt;Void&gt;&gt; assignRoleOrgMember(@Valid @RequestBody AssignRoleRequest request) {
+<span class="nc" id="L68">        orgMemberService.assignRoleOrgMember(request);</span>
+<span class="nc" id="L69">        return ResponseUtils.success(null, localizationUtils.getLocalizedMessage(MessageConstants.UPDATE_SUCCESSFULLY));</span>
+    }
+
+    @PutMapping(&quot;change-status-active&quot;)
+    @Operation(summary = &quot;Change Status Active Org Member&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ORG_MEMBER:ADD', 'ORG_MEMBER:UPDATE')&quot;)
+    public ResponseEntity&lt;Response&lt;Void&gt;&gt; changeStatusActive(@Valid @RequestBody ChangeStatusActiveRequest request) {
+<span class="nc" id="L76">        orgMemberService.changeStatusActive(request);</span>
+<span class="nc" id="L77">        return ResponseUtils.success(null, localizationUtils.getLocalizedMessage(MessageConstants.UPDATE_SUCCESSFULLY));</span>
+    }
+
+    @GetMapping(&quot;/org-member-info/{userId}&quot;)
+    @Operation(summary = &quot;Get organization member info by user ID&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ORG_MEMBER:VIEW')&quot;)
+    public ResponseEntity&lt;Response&lt;OrgMemberDto&gt;&gt; getOrgMemberInfo(@PathVariable Long userId) {
+<span class="nc" id="L84">        return ResponseUtils.success(orgMemberService.orgMemberInfo(userId));</span>
+    }
+
+    @PostMapping(&quot;/internal/check-org-member&quot;)
+    @Operation(summary = &quot;Internal check organization member by user ID&quot;)
+    @InternalRequest
+    public ResponseEntity&lt;Response&lt;Boolean&gt;&gt; checkOrgMember(@RequestBody List&lt;Long&gt; userIds) {
+<span class="nc" id="L91">        return ResponseUtils.success(orgMemberService.checkOrgMember(userIds));</span>
+    }
+
+    @PostMapping(&quot;/internal/update-account-status-by-org-ids&quot;)
+    @Operation(summary = &quot;Internal update account status by organization IDs&quot;)
+    @InternalRequest
+    public ResponseEntity&lt;Response&lt;Void&gt;&gt; updateAccountStatusByOrgIds(@Valid @RequestBody ChangeStatusActiveRequest request) {
+<span class="nc" id="L98">        orgMemberService.updateAccountStatusByOrgIds(request);</span>
+<span class="nc" id="L99">        return ResponseUtils.success(null);</span>
+    }
+
+    @PostMapping(&quot;/internal/rollback-update-account-status-by-org-ids&quot;)
+    @Operation(summary = &quot;Internal update account status by organization IDs&quot;)
+    @InternalRequest
+    public ResponseEntity&lt;Response&lt;Void&gt;&gt; rollbackUpdateAccountStatusByOrgIds(@Valid @RequestBody FailedRollbackUpdateAccountStatus request) {
+<span class="nc" id="L106">        orgMemberService.rollbackUpdateAccountStatusByOrgIds(request);</span>
+<span class="nc" id="L107">        return ResponseUtils.success(null);</span>
+    }
+
+    @GetMapping(&quot;/org-member-by-org&quot;)
+    @Operation(summary = &quot;Get organization members by organization ID&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ORG:VIEW', 'SYSTEM_ADMIN')&quot;)
+    public ResponseEntity&lt;Response&lt;FilterResponse&lt;OrgMemberDto&gt;&gt;&gt; getOrgMembersByOrgId(@Valid @ModelAttribute OrgMemberFilter request) {
+<span class="nc" id="L114">        return ResponseUtils.success(orgMemberService.filterBySystemAdmin(request));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

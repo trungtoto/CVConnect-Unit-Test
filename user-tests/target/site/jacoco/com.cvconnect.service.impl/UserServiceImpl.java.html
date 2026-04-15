@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.service.impl</a> &gt; <span class="el_source">UserServiceImpl.java</span></div><h1>UserServiceImpl.java</h1><pre class="source lang-java linenums">package com.cvconnect.service.impl;
+
+import com.cvconnect.common.RestTemplateClient;
+import com.cvconnect.constant.Constants;
+import com.cvconnect.dto.failedRollback.FailedRollbackDto;
+import com.cvconnect.dto.failedRollback.FailedRollbackUploadFile;
+import com.cvconnect.dto.internal.response.AttachFileDto;
+import com.cvconnect.dto.orgMember.OrgMemberDto;
+import com.cvconnect.dto.role.RoleDto;
+import com.cvconnect.dto.roleUser.RoleUserDto;
+import com.cvconnect.dto.user.*;
+import com.cvconnect.entity.Candidate;
+import com.cvconnect.entity.ManagementMember;
+import com.cvconnect.entity.OrgMember;
+import com.cvconnect.entity.User;
+import com.cvconnect.enums.*;
+import com.cvconnect.repository.UserRepository;
+import com.cvconnect.service.*;
+import com.cvconnect.utils.ServiceUtils;
+import com.cvconnect.utils.UserServiceUtils;
+import jakarta.annotation.PostConstruct;
+import nmquan.commonlib.constant.CommonConstants;
+import nmquan.commonlib.constant.MessageConstants;
+import nmquan.commonlib.dto.response.ExportResponse;
+import nmquan.commonlib.dto.response.FilterResponse;
+import nmquan.commonlib.exception.AppException;
+import nmquan.commonlib.exception.CommonErrorCode;
+import nmquan.commonlib.utils.*;
+import org.jxls.common.Context;
+import org.jxls.transform.poi.PoiTransformer;
+import org.jxls.util.JxlsHelper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.domain.Page;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Service
+<span class="fc" id="L53">public class UserServiceImpl implements UserService {</span>
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private RoleUserService roleUserService;
+    @Autowired
+    private CandidateService candidateService;
+    @Autowired
+    private ManagementMemberService managementMemberService;
+    @Lazy
+    @Autowired
+    private OrgMemberService orgMemberService;
+    @Autowired
+    private RoleService roleService;
+    @Autowired
+    private RestTemplateClient restTemplateClient;
+    @Autowired
+    private ServiceUtils serviceUtils;
+    @Lazy
+    @Autowired
+    private AuthService authService;
+    @Autowired
+    private FailedRollbackService failedRollbackService;
+
+<span class="fc" id="L79">    private final Map&lt;Class&lt;?&gt;, Function&lt;Long, ?&gt;&gt; fetcherMap = new HashMap&lt;&gt;();</span>
+
+    @PostConstruct
+    private void initFetcherMap() {
+<span class="nc" id="L83">        fetcherMap.put(ManagementMember.class, managementMemberService::getManagementMember);</span>
+<span class="nc" id="L84">        fetcherMap.put(Candidate.class, candidateService::getCandidate);</span>
+<span class="nc" id="L85">        fetcherMap.put(OrgMember.class, orgMemberService::getOrgMember);</span>
+<span class="nc" id="L86">    }</span>
+
+    @Override
+    public UserDto findById(Long id) {
+<span class="nc" id="L90">        User user = userRepository.findById(id).orElse(null);</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L92">            return null;</span>
+        }
+<span class="nc" id="L94">        return ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+    }
+
+    @Override
+    public UserDto findByUsername(String username) {
+<span class="nc" id="L99">        User user = userRepository.findByUsername(username).orElse(null);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L101">            return null;</span>
+        }
+<span class="nc" id="L103">        return ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+    }
+
+    @Override
+    public UserDto findByEmail(String email) {
+<span class="nc" id="L108">        User user = userRepository.findByEmail(email).orElse(null);</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L110">            return null;</span>
+        }
+<span class="nc" id="L112">        return ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+    }
+
+    @Override
+    public UserDto create(UserDto userDto) {
+<span class="nc" id="L117">        User user = userRepository.save(ObjectMapperUtils.convertToObject(userDto, User.class));</span>
+<span class="nc" id="L118">        return ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+    }
+
+    @Override
+    public UserDto getMyInfo(Long roleId) {
+<span class="nc" id="L123">        Long userId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L124">        User user = userRepository.findById(userId).orElseThrow(</span>
+<span class="nc" id="L125">                () -&gt; new AppException(CommonErrorCode.DATA_NOT_FOUND)</span>
+        );
+<span class="nc" id="L127">        UserDto userDto = ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+<span class="nc" id="L128">        UserDetailDto&lt;?&gt; userDetailDto = this.getUserDetail(userId, roleId);</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        userDto.setUserDetails(userDetailDto != null ? List.of(userDetailDto) : null);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if(userDto.getAvatarId() != null){</span>
+<span class="nc" id="L131">            AttachFileDto attachFileDto = restTemplateClient.getAttachFileById(userDto.getAvatarId());</span>
+<span class="nc" id="L132">            userDto.setAvatarUrl(attachFileDto.getSecureUrl());</span>
+        }
+<span class="nc" id="L134">        List&lt;RoleUserDto&gt; roleUserDtos = roleUserService.findRoleUseByUserId(userId);</span>
+<span class="nc" id="L135">        userDto.setRoles(roleUserDtos.stream().map(RoleUserDto::getRole).collect(Collectors.toList()));</span>
+<span class="nc" id="L136">        return userDto.configResponse();</span>
+    }
+
+    @Override
+    public void resetPassword(Long userId, String newPassword) {
+<span class="fc" id="L141">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L143">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">        List&lt;String&gt; accessMethods = user.getAccessMethod() != null</span>
+<span class="fc" id="L146">                ? Arrays.asList(user.getAccessMethod().split(&quot;,&quot;))</span>
+<span class="pc" id="L147">                : Collections.emptyList();</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (!accessMethods.contains(AccessMethod.LOCAL.name())) {</span>
+<span class="fc" id="L149">            throw new AppException(UserErrorCode.REGISTER_THIRD_PARTY);</span>
+        }
+<span class="fc" id="L151">        user.setPassword(passwordEncoder.encode(newPassword));</span>
+<span class="fc" id="L152">        userRepository.save(user);</span>
+<span class="fc" id="L153">    }</span>
+
+    @Override
+    public void updateEmailVerified(Long userId, Boolean emailVerified) {
+<span class="fc" id="L157">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L159">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="fc" id="L161">        user.setIsEmailVerified(emailVerified);</span>
+<span class="fc" id="L162">        userRepository.save(user);</span>
+<span class="fc" id="L163">    }</span>
+
+    @Override
+    public Boolean checkOrgUserRole(Long userId, String roleCode, Long orgId) {
+<span class="nc" id="L167">        return userRepository.checkOrgUserRole(userId, roleCode, orgId);</span>
+    }
+
+    @Override
+    public List&lt;UserDto&gt; getUsersByRoleCodeOrg(String roleCode) {
+<span class="nc" id="L172">        Long orgId = serviceUtils.validOrgMember();</span>
+<span class="nc" id="L173">        List&lt;User&gt; users = userRepository.getUsersByRoleCodeOrg(roleCode, orgId, true);</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if(ObjectUtils.isEmpty(users)){</span>
+<span class="nc" id="L175">            return List.of();</span>
+        }
+<span class="nc" id="L177">        List&lt;UserDto&gt; userDtos = ObjectMapperUtils.convertToList(users, UserDto.class);</span>
+<span class="nc" id="L178">        return userDtos.stream()</span>
+<span class="nc" id="L179">                .map(UserDto::configResponse)</span>
+<span class="nc" id="L180">                .toList();</span>
+    }
+
+    @Override
+    public List&lt;UserDto&gt; getUsersByRoleCodeOrg(String roleCode, Long orgId) {
+<span class="fc" id="L185">        List&lt;User&gt; users = userRepository.getUsersByRoleCodeOrg(roleCode, orgId, true);</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        if(ObjectUtils.isEmpty(users)){</span>
+<span class="fc" id="L187">            return List.of();</span>
+        }
+<span class="fc" id="L189">        List&lt;UserDto&gt; userDtos = ObjectMapperUtils.convertToList(users, UserDto.class);</span>
+<span class="fc" id="L190">        return userDtos.stream()</span>
+<span class="fc" id="L191">                .map(UserDto::configResponse)</span>
+<span class="fc" id="L192">                .toList();</span>
+    }
+
+    @Override
+    public UserDto getUserById(Long userId) {
+<span class="nc" id="L197">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L199">            return null;</span>
+        }
+<span class="nc" id="L201">        UserDto userDto = ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+<span class="nc" id="L202">        return userDto.configResponse();</span>
+    }
+
+    @Override
+    public void setDefaultRole(Long roleId) {
+<span class="nc" id="L207">        Long userId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L208">        List&lt;RoleUserDto&gt; roleUserDtos = roleUserService.findByUserId(userId);</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if(roleUserDtos.stream().noneMatch(r -&gt; r.getRoleId().equals(roleId))) {</span>
+<span class="nc" id="L210">            throw new AppException(UserErrorCode.ROLE_NOT_FOUND);</span>
+        }
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        for (RoleUserDto roleUserDto : roleUserDtos) {</span>
+<span class="nc" id="L213">            roleUserDto.setIsDefault(roleUserDto.getRoleId().equals(roleId));</span>
+<span class="nc" id="L214">        }</span>
+<span class="nc" id="L215">        roleUserService.saveList(roleUserDtos);</span>
+<span class="nc" id="L216">    }</span>
+
+    @Override
+    public void updatePassword(UpdatePasswordRequest request) {
+<span class="nc" id="L220">        Long userId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L221">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L223">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        List&lt;String&gt; accessMethods = user.getAccessMethod() != null</span>
+<span class="nc" id="L226">                ? Arrays.asList(user.getAccessMethod().split(&quot;,&quot;))</span>
+<span class="nc" id="L227">                : Collections.emptyList();</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (!accessMethods.contains(AccessMethod.LOCAL.name())) {</span>
+<span class="nc" id="L229">            throw new AppException(UserErrorCode.REGISTER_THIRD_PARTY);</span>
+        }
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {</span>
+<span class="nc" id="L232">            throw new AppException(UserErrorCode.CURRENT_PASSWORD_INCORRECT);</span>
+        }
+<span class="nc" id="L234">        user.setPassword(passwordEncoder.encode(request.getNewPassword()));</span>
+<span class="nc" id="L235">        userRepository.save(user);</span>
+<span class="nc" id="L236">    }</span>
+
+    @Override
+    @Transactional
+    public void updateAvatar(MultipartFile file) {
+<span class="nc" id="L241">        Long fileId = null;</span>
+        try{
+<span class="nc" id="L243">            UserServiceUtils.validateImageFileInput(file);</span>
+<span class="nc" id="L244">            Long userId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L245">            User user = userRepository.findById(userId).orElse(null);</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (user == null) {</span>
+<span class="nc" id="L247">                throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+            }
+<span class="nc" id="L249">            Long oldFileId = user.getAvatarId();</span>
+<span class="nc" id="L250">            fileId = restTemplateClient.uploadFile(new MultipartFile[]{file}).get(0);</span>
+<span class="nc" id="L251">            user.setAvatarId(fileId);</span>
+<span class="nc" id="L252">            userRepository.save(user);</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">            if(oldFileId != null) {</span>
+<span class="nc" id="L254">                restTemplateClient.deleteAttachFilesByIds(List.of(oldFileId));</span>
+            }
+<span class="nc" id="L256">        } catch (Exception exception){</span>
+<span class="nc" id="L257">            FailedRollbackUploadFile payload = FailedRollbackUploadFile.builder()</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">                    .attachFileIds(fileId != null ? List.of(fileId) : null)</span>
+<span class="nc" id="L259">                    .build();</span>
+            try{
+<span class="nc bnc" id="L261" title="All 2 branches missed.">                if(payload.getAttachFileIds() != null){</span>
+<span class="nc" id="L262">                    restTemplateClient.deleteAttachFilesByIds(payload.getAttachFileIds());</span>
+                }
+<span class="nc" id="L264">            } catch (Exception e){</span>
+<span class="nc" id="L265">                failedRollbackService.save(</span>
+<span class="nc" id="L266">                        FailedRollbackDto.builder()</span>
+<span class="nc" id="L267">                                .type(FailedRollbackType.UPLOAD_FILE.getType())</span>
+<span class="nc" id="L268">                                .payload(ObjectMapperUtils.convertToJson(payload))</span>
+<span class="nc" id="L269">                                .errorMessage(e.getMessage())</span>
+<span class="nc" id="L270">                                .status(false)</span>
+<span class="nc" id="L271">                                .retryCount(0)</span>
+<span class="nc" id="L272">                                .build()</span>
+                );
+            } finally {
+<span class="nc" id="L275">                throw exception;</span>
+            }
+<span class="nc" id="L277">        }</span>
+<span class="nc" id="L278">    }</span>
+
+    @Override
+    @Transactional
+    public void updateInfo(UserUpdateRequest request) {
+<span class="nc" id="L283">        Long userId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L284">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L286">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc" id="L288">        String oldEmail = user.getEmail();</span>
+<span class="nc" id="L289">        User existsEmailUser = userRepository.findByEmail(request.getEmail()).orElse(null);</span>
+<span class="nc bnc" id="L290" title="All 4 branches missed.">        if (!oldEmail.equals(request.getEmail()) &amp;&amp; !ObjectUtils.isEmpty(existsEmailUser)) {</span>
+<span class="nc" id="L291">            throw new AppException(UserErrorCode.EMAIL_EXISTS);</span>
+        }
+<span class="nc" id="L293">        user.setEmail(request.getEmail());</span>
+<span class="nc" id="L294">        user.setFullName(request.getFullName());</span>
+<span class="nc" id="L295">        user.setPhoneNumber(request.getPhoneNumber());</span>
+<span class="nc" id="L296">        user.setAddress(request.getAddress());</span>
+<span class="nc" id="L297">        user.setDateOfBirth(request.getDateOfBirth());</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">        if(!oldEmail.equals(request.getEmail())) {</span>
+<span class="nc" id="L299">            user.setIsEmailVerified(false);</span>
+        }
+<span class="nc" id="L301">        userRepository.save(user);</span>
+
+        // send email require verification
+<span class="nc bnc" id="L304" title="All 2 branches missed.">        if(!oldEmail.equals(request.getEmail())) {</span>
+<span class="nc" id="L305">            UserDto userDto = ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+<span class="nc" id="L306">            authService.sendRequestVerifyEmail(userDto);</span>
+        }
+<span class="nc" id="L308">    }</span>
+
+    @Override
+    public List&lt;RoleDto&gt; getMyRoles() {
+<span class="nc" id="L312">        Long userId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L313">        return roleService.getRoleUseByUserId(userId);</span>
+    }
+
+    @Override
+    public FilterResponse&lt;UserDto&gt; findNotOrgMember(UserFilterRequest request) {
+<span class="nc" id="L318">        request.setMemberTypes(List.of(MemberType.ORGANIZATION));</span>
+<span class="nc" id="L319">        Page&lt;User&gt; page = userRepository.findNotOrgMember(request, request.getPageable());</span>
+<span class="nc" id="L320">        Page&lt;UserDto&gt; dtoPage = page.map(user -&gt; {</span>
+<span class="nc" id="L321">            UserDto userDto = ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+<span class="nc" id="L322">            return userDto.configResponse();</span>
+        });
+<span class="nc" id="L324">        return PageUtils.toFilterResponse(dtoPage, dtoPage.getContent());</span>
+    }
+
+    @Override
+    public Map&lt;Long, UserDto&gt; getByIds(List&lt;Long&gt; userIds) {
+<span class="nc" id="L329">        List&lt;User&gt; users = userRepository.findAllById(userIds);</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">        if(ObjectUtils.isEmpty(users)){</span>
+<span class="nc" id="L331">            return Map.of();</span>
+        }
+<span class="nc" id="L333">        List&lt;UserDto&gt; userDtos = ObjectMapperUtils.convertToList(users, UserDto.class);</span>
+<span class="nc" id="L334">        return userDtos.stream()</span>
+<span class="nc" id="L335">                .map(UserDto::configResponse)</span>
+<span class="nc" id="L336">                .collect(Collectors.toMap(UserDto::getId, Function.identity()));</span>
+    }
+
+    @Override
+    public FilterResponse&lt;UserDto&gt; filter(UserFilterRequest request) {
+<span class="nc bnc" id="L341" title="All 2 branches missed.">        if(request.getCreatedAtEnd() != null){</span>
+<span class="nc" id="L342">            request.setCreatedAtEnd(DateUtils.endOfDay(request.getCreatedAtEnd(), CommonConstants.ZONE.UTC));</span>
+        }
+<span class="nc bnc" id="L344" title="All 2 branches missed.">        if(request.getUpdatedAtEnd() != null){</span>
+<span class="nc" id="L345">            request.setUpdatedAtEnd(DateUtils.endOfDay(request.getUpdatedAtEnd(), CommonConstants.ZONE.UTC));</span>
+        }
+<span class="nc" id="L347">        Page&lt;UserProjection&gt; page = userRepository.filter(request, request.getPageable());</span>
+
+<span class="nc" id="L349">        List&lt;Long&gt; userIds = page.getContent().stream()</span>
+<span class="nc" id="L350">                .map(UserProjection::getId)</span>
+<span class="nc" id="L351">                .toList();</span>
+<span class="nc" id="L352">        Map&lt;Long, List&lt;RoleDto&gt;&gt; roleUsers =  roleService.getRolesByUserIds(userIds);</span>
+
+<span class="nc" id="L354">        List&lt;UserDto&gt; userDtos = page.getContent().stream()</span>
+<span class="nc" id="L355">                .map(p -&gt; {</span>
+<span class="nc" id="L356">                    UserDto userDto = new UserDto();</span>
+<span class="nc" id="L357">                    userDto.setId(p.getId());</span>
+<span class="nc" id="L358">                    userDto.setUsername(p.getUsername());</span>
+<span class="nc" id="L359">                    userDto.setEmail(p.getEmail());</span>
+<span class="nc" id="L360">                    userDto.setFullName(p.getFullName());</span>
+<span class="nc" id="L361">                    userDto.setPhoneNumber(p.getPhoneNumber());</span>
+<span class="nc" id="L362">                    userDto.setDateOfBirth(p.getDateOfBirth());</span>
+<span class="nc" id="L363">                    userDto.setIsEmailVerified(p.getIsEmailVerified());</span>
+<span class="nc" id="L364">                    userDto.setAccessMethod(p.getAccessMethod());</span>
+<span class="nc bnc" id="L365" title="All 2 branches missed.">                    if(!ObjectUtils.isEmpty(p.getAccessMethod())){</span>
+<span class="nc" id="L366">                        List&lt;String&gt; accessMethod = Arrays.asList(p.getAccessMethod().split(&quot;,&quot;));</span>
+<span class="nc" id="L367">                        List&lt;AccessMethodDto&gt; accessMethodDtos = accessMethod.stream()</span>
+<span class="nc" id="L368">                                .map(AccessMethod::getAccessMethodDto)</span>
+<span class="nc" id="L369">                                .toList();</span>
+<span class="nc" id="L370">                        userDto.setAccessMethods(accessMethodDtos);</span>
+                    }
+<span class="nc bnc" id="L372" title="All 2 branches missed.">                    if(p.getAvatarId() != null){</span>
+<span class="nc" id="L373">                        AttachFileDto avatar = restTemplateClient.getAttachFileById(p.getAvatarId());</span>
+<span class="nc" id="L374">                        userDto.setAvatarUrl(avatar.getSecureUrl());</span>
+                    }
+<span class="nc" id="L376">                    userDto.setRoles(roleUsers.get(p.getId()));</span>
+<span class="nc" id="L377">                    userDto.setIsActive(p.getIsActive());</span>
+<span class="nc" id="L378">                    userDto.setCreatedAt(p.getCreatedAt());</span>
+<span class="nc" id="L379">                    userDto.setUpdatedAt(p.getUpdatedAt());</span>
+<span class="nc" id="L380">                    userDto.setCreatedBy(p.getCreatedBy());</span>
+<span class="nc" id="L381">                    userDto.setUpdatedBy(p.getUpdatedBy());</span>
+<span class="nc" id="L382">                    return userDto.configResponse();</span>
+<span class="nc" id="L383">                }).toList();</span>
+<span class="nc" id="L384">        return PageUtils.toFilterResponse(page, userDtos);</span>
+    }
+
+    @Override
+    public UserDto userDetailForSystemAdmin(Long userId) {
+<span class="nc" id="L389">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="nc bnc" id="L390" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L391">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc" id="L393">        UserDto userDto = ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+
+<span class="nc" id="L395">        Map&lt;Long, List&lt;RoleDto&gt;&gt; roleUsers =  roleService.getRolesByUserIds(List.of(userId));</span>
+<span class="nc" id="L396">        userDto.setRoles(roleUsers.get(userId));</span>
+
+<span class="nc bnc" id="L398" title="All 2 branches missed.">        if(!ObjectUtils.isEmpty(userDto.getAccessMethod())){</span>
+<span class="nc" id="L399">            List&lt;String&gt; accessMethod = Arrays.asList(userDto.getAccessMethod().split(&quot;,&quot;));</span>
+<span class="nc" id="L400">            List&lt;AccessMethodDto&gt; accessMethodDtos = accessMethod.stream()</span>
+<span class="nc" id="L401">                    .map(AccessMethod::getAccessMethodDto)</span>
+<span class="nc" id="L402">                    .toList();</span>
+<span class="nc" id="L403">            userDto.setAccessMethods(accessMethodDtos);</span>
+        }
+<span class="nc bnc" id="L405" title="All 2 branches missed.">        if(userDto.getAvatarId() != null){</span>
+<span class="nc" id="L406">            AttachFileDto avatar = restTemplateClient.getAttachFileById(userDto.getAvatarId());</span>
+<span class="nc" id="L407">            userDto.setAvatarUrl(avatar.getSecureUrl());</span>
+        }
+
+<span class="nc" id="L410">        OrgMemberDto orgMemberDto = orgMemberService.getOrgMemberForSystemAdmin(userId);</span>
+<span class="nc" id="L411">        userDto.setOrgMember(orgMemberDto);</span>
+
+<span class="nc" id="L413">        return userDto.configResponse();</span>
+    }
+
+    @Override
+    @Transactional
+    public void assignAdminSystemRole(Long userId) {
+<span class="nc" id="L419">        RoleDto roleSystemAdmin = roleService.getRoleByCode(Constants.RoleCode.SYSTEM_ADMIN);</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">        if(roleSystemAdmin == null) {</span>
+<span class="nc" id="L421">            throw new AppException(CommonErrorCode.ERROR);</span>
+        }
+<span class="nc" id="L423">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L425">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc bnc" id="L427" title="All 2 branches missed.">        if (Boolean.FALSE.equals(user.getIsEmailVerified())) {</span>
+<span class="nc" id="L428">            throw new AppException(UserErrorCode.EMAIL_NOT_VERIFIED);</span>
+        }
+<span class="nc bnc" id="L430" title="All 2 branches missed.">        if (Boolean.FALSE.equals(user.getIsActive())) {</span>
+<span class="nc" id="L431">            throw new AppException(UserErrorCode.ACCOUNT_NOT_ACTIVE);</span>
+        }
+<span class="nc" id="L433">        RoleUserDto roleUserDto = roleUserService.findByUserIdAndRoleId(userId, roleSystemAdmin.getId());</span>
+<span class="nc bnc" id="L434" title="All 2 branches missed.">        if(roleUserDto != null) {</span>
+<span class="nc" id="L435">            throw new AppException(UserErrorCode.USER_ALREADY_HAS_ROLE);</span>
+        }
+<span class="nc" id="L437">        roleUserDto = RoleUserDto.builder()</span>
+<span class="nc" id="L438">                .userId(userId)</span>
+<span class="nc" id="L439">                .roleId(roleSystemAdmin.getId())</span>
+<span class="nc" id="L440">                .build();</span>
+<span class="nc" id="L441">        roleUserService.createRoleUser(roleUserDto);</span>
+<span class="nc" id="L442">    }</span>
+
+    @Override
+    @Transactional
+    public void retrieveAdminSystemRole(Long userId) {
+<span class="nc" id="L447">        Long currentUserId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L448">        RoleDto roleSystemAdmin = roleService.getRoleByCode(Constants.RoleCode.SYSTEM_ADMIN);</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">        if(roleSystemAdmin == null) {</span>
+<span class="nc" id="L450">            throw new AppException(CommonErrorCode.ERROR);</span>
+        }
+<span class="nc" id="L452">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L454">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc" id="L456">        RoleUserDto roleUserDto = roleUserService.findByUserIdAndRoleId(userId, roleSystemAdmin.getId());</span>
+<span class="nc bnc" id="L457" title="All 2 branches missed.">        if(roleUserDto == null) {</span>
+<span class="nc" id="L458">            throw new AppException(UserErrorCode.USER_DOES_NOT_HAVE_ROLE);</span>
+        }
+<span class="nc bnc" id="L460" title="All 2 branches missed.">        if(userId.equals(currentUserId)) {</span>
+<span class="nc" id="L461">            throw new AppException(UserErrorCode.CANNOT_REMOVE_OWN_SYSTEM_ADMIN_ROLE);</span>
+        }
+<span class="nc" id="L463">        roleUserService.deleteByUserIdAndRoleIds(userId, List.of(roleUserDto.getRoleId()));</span>
+
+<span class="nc" id="L465">        boolean checkRoleSystemAdminExists = roleUserService.existsUserActiveByRoleId(roleUserDto.getRoleId());</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">        if(!checkRoleSystemAdminExists) {</span>
+<span class="nc" id="L467">            throw new AppException(UserErrorCode.LAST_SYSTEM_ADMIN_CANNOT_BE_REMOVED);</span>
+        }
+<span class="nc" id="L469">    }</span>
+
+    @Override
+    public InputStreamResource exportUser(UserFilterRequest filter) {
+<span class="nc" id="L473">        filter.setPageIndex(0);</span>
+<span class="nc" id="L474">        filter.setPageSize(Integer.MAX_VALUE);</span>
+<span class="nc" id="L475">        FilterResponse&lt;UserDto&gt; filterResponse = this.filter(filter);</span>
+<span class="nc" id="L476">        List&lt;UserDto&gt; users = filterResponse.getData();</span>
+<span class="nc" id="L477">        users.forEach(u -&gt; {</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">            if(u.getDateOfBirth() != null) {</span>
+<span class="nc" id="L479">                DateFormat dateFormat = new SimpleDateFormat(CommonConstants.DATE_TIME.DD_MM_YYYY_HYPHEN);</span>
+<span class="nc" id="L480">                u.setDateOfBirthStr(dateFormat.format(u.getDateOfBirth()));</span>
+            }
+<span class="nc bnc" id="L482" title="All 2 branches missed.">            if(u.getIsEmailVerified() == true) {</span>
+<span class="nc" id="L483">                u.setVerifyEmailStr(&quot;Ä�Ã£ xÃ¡c thá»±c&quot;);</span>
+            } else {
+<span class="nc" id="L485">                u.setVerifyEmailStr(&quot;ChÆ°a xÃ¡c thá»±c&quot;);</span>
+            }
+<span class="nc bnc" id="L487" title="All 2 branches missed.">            if(u.getIsActive() == true) {</span>
+<span class="nc" id="L488">                u.setActiveStr(&quot;Ä�ang hoáº¡t Ä‘á»™ng&quot;);</span>
+            } else {
+<span class="nc" id="L490">                u.setActiveStr(&quot;Ngá»«ng hoáº¡t Ä‘á»™ng&quot;);</span>
+            }
+<span class="nc bnc" id="L492" title="All 2 branches missed.">            if(!ObjectUtils.isEmpty(u.getRoles())) {</span>
+<span class="nc" id="L493">                String rolesStr = u.getRoles().stream()</span>
+<span class="nc" id="L494">                        .map(RoleDto::getName)</span>
+<span class="nc" id="L495">                        .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="nc" id="L496">                u.setRolesStr(rolesStr);</span>
+            }
+<span class="nc" id="L498">            u.setCreatedAtStr(DateUtils.instantToString_HCM(u.getCreatedAt(), CommonConstants.DATE_TIME.DD_MM_YYYY_HH_MM_SS));</span>
+<span class="nc bnc" id="L499" title="All 2 branches missed.">            if(!ObjectUtils.isEmpty(u.getUpdatedAt())) {</span>
+<span class="nc" id="L500">                u.setUpdatedAtStr(DateUtils.instantToString_HCM(u.getUpdatedAt(), CommonConstants.DATE_TIME.DD_MM_YYYY_HH_MM_SS));</span>
+            }
+<span class="nc" id="L502">        });</span>
+
+<span class="nc" id="L504">        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L505">        map.put(&quot;data&quot;, users);</span>
+<span class="nc" id="L506">        map.put(&quot;date&quot;, DateUtils.instantToString_HCM(Instant.now(), CommonConstants.DATE_TIME.DD_MM_YYYY_HH_MM));</span>
+<span class="nc" id="L507">        ByteArrayOutputStream bytes = ExportUtils.genXlsxFromMap(map, TemplateExport.USER_EXPORT_TEMPLATE.getPath());</span>
+<span class="nc" id="L508">        return ExportUtils.toInputStreamResource(bytes);</span>
+    }
+
+    @Override
+    public UserDto getMyProfiles() {
+<span class="nc" id="L513">        Long userId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L514">        User user = userRepository.findById(userId).orElse(null);</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L516">            throw new AppException(UserErrorCode.USER_NOT_FOUND);</span>
+        }
+<span class="nc" id="L518">        UserDto userDto = ObjectMapperUtils.convertToObject(user, UserDto.class);</span>
+<span class="nc" id="L519">        List&lt;RoleDto&gt; roleDtos = roleService.getRoleByUserId(userId);</span>
+<span class="nc" id="L520">        userDto.setRoles(roleDtos);</span>
+<span class="nc bnc" id="L521" title="All 2 branches missed.">        if(userDto.getAvatarId() != null){</span>
+<span class="nc" id="L522">            AttachFileDto attachFileDto = restTemplateClient.getAttachFileById(userDto.getAvatarId());</span>
+<span class="nc" id="L523">            userDto.setAvatarUrl(attachFileDto.getSecureUrl());</span>
+        }
+<span class="nc" id="L525">        return userDto.configResponse();</span>
+    }
+
+    @Override
+    public List&lt;UserDto&gt; findAllSystemAdmin() {
+<span class="nc" id="L530">        String roleCode = Constants.RoleCode.SYSTEM_ADMIN;</span>
+<span class="nc" id="L531">        List&lt;User&gt; users = userRepository.getUsersByRoleCode(roleCode, true);</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">        if(ObjectUtils.isEmpty(users)){</span>
+<span class="nc" id="L533">            return List.of();</span>
+        }
+<span class="nc" id="L535">        List&lt;UserDto&gt; userDtos = ObjectMapperUtils.convertToList(users, UserDto.class);</span>
+<span class="nc" id="L536">        return userDtos.stream()</span>
+<span class="nc" id="L537">                .map(UserDto::configResponse)</span>
+<span class="nc" id="L538">                .toList();</span>
+    }
+
+    private &lt;T&gt; UserDetailDto&lt;T&gt; getUserDetail(Long userId, Long roleId) {
+<span class="nc" id="L542">        RoleUserDto roleUserDto = roleUserService.findByUserIdAndRoleId(userId, roleId);</span>
+<span class="nc bnc" id="L543" title="All 2 branches missed.">        if(roleUserDto == null) {</span>
+<span class="nc" id="L544">            return null;</span>
+        }
+<span class="nc" id="L546">        RoleDto roleDto = roleService.getRoleById(roleId);</span>
+<span class="nc" id="L547">        Class&lt;?&gt; detailInfoClass = roleDto.getMemberType().getClazz();</span>
+<span class="nc" id="L548">        Function&lt;Long, ?&gt; fetcher = fetcherMap.get(detailInfoClass);</span>
+<span class="nc bnc" id="L549" title="All 2 branches missed.">        if(fetcher == null) {</span>
+<span class="nc" id="L550">            return null;</span>
+        }
+<span class="nc" id="L552">        T detailInfo = (T) fetcher.apply(userId);</span>
+<span class="nc" id="L553">        return UserDetailDto.&lt;T&gt;builder()</span>
+<span class="nc" id="L554">                .role(roleDto)</span>
+<span class="nc" id="L555">                .detailInfo(detailInfo)</span>
+<span class="nc" id="L556">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoleMenuServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.service.impl</a> &gt; <span class="el_source">RoleMenuServiceImpl.java</span></div><h1>RoleMenuServiceImpl.java</h1><pre class="source lang-java linenums">package com.cvconnect.service.impl;
+
+import com.cvconnect.dto.roleMenu.PermissionTypeDto;
+import com.cvconnect.dto.roleMenu.RoleMenuDto;
+import com.cvconnect.dto.roleMenu.RoleMenuProjection;
+import com.cvconnect.entity.RoleMenu;
+import com.cvconnect.enums.PermissionType;
+import com.cvconnect.repository.RoleMenuRepository;
+import com.cvconnect.service.RoleMenuService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+@Service
+<span class="nc" id="L19">public class RoleMenuServiceImpl implements RoleMenuService {</span>
+    @Autowired
+    private RoleMenuRepository roleMenuRepository;
+
+    @Override
+    public Map&lt;String, List&lt;String&gt;&gt; getAuthorities(Long userId, List&lt;String&gt; roles) {
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        if(ObjectUtils.isEmpty(roles)){</span>
+<span class="nc" id="L26">            roles = new ArrayList&lt;&gt;();</span>
+        }
+<span class="nc" id="L28">        List&lt;RoleMenuProjection&gt; roleMenuProjections = roleMenuRepository.findAuthoritiesByUserId(userId, roles);</span>
+<span class="nc" id="L29">        return roleMenuProjections.stream()</span>
+<span class="nc" id="L30">                .flatMap(object -&gt; {</span>
+<span class="nc" id="L31">                    String menuCode = object.getMenuCode();</span>
+<span class="nc" id="L32">                    String permission = object.getPermission();</span>
+<span class="nc bnc" id="L33" title="All 4 branches missed.">                    if (permission != null &amp;&amp; !permission.isEmpty()) {</span>
+<span class="nc" id="L34">                        return Arrays.stream(permission.split(&quot;,&quot;))</span>
+<span class="nc" id="L35">                                .map(per -&gt; Map.entry(menuCode, per.trim()));</span>
+                    }
+<span class="nc" id="L37">                    return Stream.empty();</span>
+                })
+<span class="nc" id="L39">                .collect(Collectors.groupingBy(</span>
+                        Map.Entry::getKey,
+<span class="nc" id="L41">                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())</span>
+                ));
+    }
+
+    @Override
+    public List&lt;PermissionTypeDto&gt; getAllPermissionTypes() {
+<span class="nc" id="L47">        return Arrays.stream(PermissionType.values())</span>
+<span class="nc" id="L48">                .map(type -&gt; PermissionTypeDto.builder()</span>
+<span class="nc" id="L49">                        .code(type.name())</span>
+<span class="nc" id="L50">                        .build())</span>
+<span class="nc" id="L51">                .toList();</span>
+    }
+
+    @Override
+    public void saveAll(List&lt;RoleMenuDto&gt; roleMenuDtos) {
+<span class="nc" id="L56">        List&lt;RoleMenu&gt; roleMenus = roleMenuDtos.stream()</span>
+<span class="nc" id="L57">                .map(roleMenuDto -&gt; {</span>
+<span class="nc" id="L58">                    RoleMenu roleMenu = new RoleMenu();</span>
+<span class="nc" id="L59">                    roleMenu.setId(roleMenuDto.getId());</span>
+<span class="nc" id="L60">                    roleMenu.setRoleId(roleMenuDto.getRoleId());</span>
+<span class="nc" id="L61">                    roleMenu.setMenuId(roleMenuDto.getMenuId());</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                    if(roleMenuDto.getPermissions() != null){</span>
+<span class="nc" id="L63">                        List&lt;String&gt; permissions = roleMenuDto.getPermissions().stream()</span>
+<span class="nc" id="L64">                                .map(Enum::name)</span>
+<span class="nc" id="L65">                                .toList();</span>
+<span class="nc" id="L66">                        roleMenu.setPermission(String.join(&quot;,&quot;, permissions));</span>
+                    }
+<span class="nc" id="L68">                    return roleMenu;</span>
+                })
+<span class="nc" id="L70">                .toList();</span>
+<span class="nc" id="L71">        roleMenuRepository.saveAll(roleMenus);</span>
+<span class="nc" id="L72">    }</span>
+
+    @Override
+    public void deleteByRoleId(Long roleId) {
+<span class="nc" id="L76">        roleMenuRepository.deleteByRoleId(roleId);</span>
+<span class="nc" id="L77">    }</span>
+
+    @Override
+    public List&lt;RoleMenuDto&gt; findByRoleId(Long id) {
+<span class="nc" id="L81">        List&lt;RoleMenu&gt; roleMenus = roleMenuRepository.findByRoleId(id);</span>
+<span class="nc" id="L82">        return roleMenus.stream()</span>
+<span class="nc" id="L83">                .map(roleMenu -&gt; {</span>
+<span class="nc" id="L84">                    List&lt;PermissionType&gt; permissions = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">                    if(roleMenu.getPermission() != null &amp;&amp; !roleMenu.getPermission().isEmpty()) {</span>
+<span class="nc" id="L86">                        permissions = Arrays.stream(roleMenu.getPermission().split(&quot;,&quot;))</span>
+<span class="nc" id="L87">                                .map(String::trim)</span>
+<span class="nc" id="L88">                                .map(PermissionType::valueOf)</span>
+<span class="nc" id="L89">                                .toList();</span>
+                    }
+<span class="nc" id="L91">                    return RoleMenuDto.builder()</span>
+<span class="nc" id="L92">                            .id(roleMenu.getId())</span>
+<span class="nc" id="L93">                            .roleId(roleMenu.getRoleId())</span>
+<span class="nc" id="L94">                            .menuId(roleMenu.getMenuId())</span>
+<span class="nc" id="L95">                            .permissions(permissions)</span>
+<span class="nc" id="L96">                            .build();</span>
+                })
+<span class="nc" id="L98">                .toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserDto.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.dto.user</a> &gt; <span class="el_source">UserDto.java</span></div><h1>UserDto.java</h1><pre class="source lang-java linenums">package com.cvconnect.dto.user;
+
+import com.cvconnect.dto.orgMember.OrgMemberDto;
+import com.cvconnect.dto.role.RoleDto;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import nmquan.commonlib.dto.BaseDto;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UserDto extends BaseDto&lt;Instant&gt; {
+    private String username;
+    private String password;
+    private String email;
+    private String fullName;
+    private String phoneNumber;
+    private String address;
+    private LocalDate dateOfBirth;
+    private Long avatarId;
+    private Boolean isEmailVerified;
+    private String accessMethod;
+
+    private List&lt;RoleDto&gt; roles;
+    private List&lt;UserDetailDto&gt; userDetails;
+    private String avatarUrl;
+    private Long orgId;
+    private String inviter;
+
+    // add
+    private List&lt;AccessMethodDto&gt; accessMethods;
+    private OrgMemberDto orgMember;
+    private String dateOfBirthStr;
+    private String verifyEmailStr;
+    private String activeStr;
+    private String rolesStr;
+    private String createdAtStr;
+    private String updatedAtStr;
+
+    public UserDto configResponse() {
+<span class="fc" id="L50">        this.setIsDeleted(null);</span>
+<span class="fc" id="L51">        this.setPassword(null);</span>
+<span class="fc" id="L52">        return this;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

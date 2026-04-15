@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MenuServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.service.impl</a> &gt; <span class="el_source">MenuServiceImpl.java</span></div><h1>MenuServiceImpl.java</h1><pre class="source lang-java linenums">package com.cvconnect.service.impl;
+
+import com.cvconnect.dto.menu.MenuDto;
+import com.cvconnect.dto.menu.MenuMetadata;
+import com.cvconnect.dto.menu.MenuProjection;
+import com.cvconnect.dto.roleUser.RoleUserDto;
+import com.cvconnect.enums.MemberType;
+import com.cvconnect.repository.MenuRepository;
+import com.cvconnect.service.MenuService;
+import com.cvconnect.service.RoleUserService;
+import nmquan.commonlib.exception.AppException;
+import nmquan.commonlib.exception.CommonErrorCode;
+import nmquan.commonlib.utils.WebUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+
+@Service
+<span class="nc" id="L20">public class MenuServiceImpl implements MenuService {</span>
+    @Autowired
+    private MenuRepository menuRepository;
+    @Autowired
+    private RoleUserService roleUserService;
+
+    @Override
+    public List&lt;MenuMetadata&gt; getMenusByRoleId(Long roleId) {
+<span class="nc" id="L28">        Long userId = WebUtils.getCurrentUserId();</span>
+<span class="nc" id="L29">        RoleUserDto roleUserDto = roleUserService.findByUserIdAndRoleId(userId, roleId);</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (roleUserDto == null) {</span>
+<span class="nc" id="L31">            throw new AppException(CommonErrorCode.ACCESS_DENIED);</span>
+        }
+<span class="nc" id="L33">        List&lt;MenuProjection&gt; projections = menuRepository.findMenusByRoleId(roleId);</span>
+<span class="nc" id="L34">        return this.buildMenuTree(projections, true);</span>
+    }
+
+    @Override
+    public List&lt;MenuMetadata&gt; getAllMenus(MemberType memberType) {
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if(Objects.equals(memberType, MemberType.CANDIDATE)){</span>
+<span class="nc" id="L40">            return Collections.emptyList();</span>
+        }
+<span class="nc" id="L42">        List&lt;MenuProjection&gt; projections = menuRepository.findAllMenu(memberType);</span>
+<span class="nc" id="L43">        return this.buildMenuTree(projections, false);</span>
+    }
+
+    @Override
+    public List&lt;MenuDto&gt; getMenuByIds(List&lt;Long&gt; ids) {
+<span class="nc" id="L48">        List&lt;MenuProjection&gt; projections = menuRepository.findByIds(ids);</span>
+<span class="nc" id="L49">        return this.buildMenuDtos(projections);</span>
+    }
+
+    public List&lt;MenuMetadata&gt; buildMenuTree(List&lt;MenuProjection&gt; projections, boolean includePermissions) {
+<span class="nc bnc" id="L53" title="All 4 branches missed.">        if(projections == null || projections.isEmpty()) {</span>
+<span class="nc" id="L54">            return Collections.emptyList();</span>
+        }
+<span class="nc" id="L56">        Map&lt;Long, MenuMetadata&gt; menuMap = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        for (MenuProjection p : projections) {</span>
+<span class="nc" id="L58">            MenuMetadata menu = new MenuMetadata();</span>
+<span class="nc" id="L59">            menu.setId(p.getId());</span>
+<span class="nc" id="L60">            menu.setMenuCode(p.getMenuCode());</span>
+<span class="nc" id="L61">            menu.setMenuLabel(p.getMenuLabel());</span>
+<span class="nc" id="L62">            menu.setMenuIcon(p.getMenuIcon());</span>
+<span class="nc" id="L63">            menu.setMenuUrl(p.getMenuUrl());</span>
+<span class="nc" id="L64">            menu.setParentId(p.getParentId());</span>
+<span class="nc" id="L65">            menu.setMenuSortOrder(p.getMenuSortOrder());</span>
+<span class="nc" id="L66">            menu.setForMemberType(p.getForMemberType());</span>
+<span class="nc bnc" id="L67" title="All 4 branches missed.">            if(includePermissions &amp;&amp; p.getPermission() != null) {</span>
+<span class="nc" id="L68">                menu.setPermissions(List.of(p.getPermission().split(&quot;,&quot;)));</span>
+            }
+<span class="nc" id="L70">            menuMap.put(menu.getId(), menu);</span>
+<span class="nc" id="L71">        }</span>
+
+<span class="nc" id="L73">        List&lt;MenuMetadata&gt; roots = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        for (MenuMetadata menu : menuMap.values()) {</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (menu.getParentId() == null) {</span>
+<span class="nc" id="L76">                roots.add(menu);</span>
+            } else {
+<span class="nc" id="L78">                MenuMetadata parent = menuMap.get(menu.getParentId());</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (parent != null) {</span>
+<span class="nc" id="L80">                    parent.getChildren().add(menu);</span>
+                }
+            }
+<span class="nc" id="L83">        }</span>
+
+<span class="nc" id="L85">        roots.sort(Comparator.comparing(MenuMetadata::getMenuSortOrder)</span>
+<span class="nc" id="L86">                .thenComparing(MenuMetadata::getId)</span>
+        );
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        for (MenuMetadata root : roots) {</span>
+<span class="nc" id="L89">            sortChildren(root);</span>
+<span class="nc" id="L90">        }</span>
+
+<span class="nc" id="L92">        return roots;</span>
+    }
+
+    private void sortChildren(MenuMetadata menu) {
+<span class="nc" id="L96">        menu.getChildren().sort(Comparator.comparing(MenuMetadata::getMenuSortOrder)</span>
+<span class="nc" id="L97">                .thenComparing(MenuMetadata::getId)</span>
+        );
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        for (MenuMetadata child : menu.getChildren()) {</span>
+<span class="nc" id="L100">            sortChildren(child);</span>
+<span class="nc" id="L101">        }</span>
+<span class="nc" id="L102">    }</span>
+
+    private List&lt;MenuDto&gt; buildMenuDtos(List&lt;MenuProjection&gt; projections) {
+<span class="nc" id="L105">        return projections.stream()</span>
+<span class="nc" id="L106">                .map(projection -&gt; MenuDto.builder()</span>
+<span class="nc" id="L107">                        .id(projection.getId())</span>
+<span class="nc" id="L108">                        .code(projection.getMenuCode())</span>
+<span class="nc" id="L109">                        .label(projection.getMenuLabel())</span>
+<span class="nc" id="L110">                        .icon(projection.getMenuIcon())</span>
+<span class="nc" id="L111">                        .parentId(projection.getParentId())</span>
+<span class="nc" id="L112">                        .sortOrder(projection.getMenuSortOrder())</span>
+<span class="nc" id="L113">                        .forMemberType(projection.getForMemberType())</span>
+<span class="nc" id="L114">                        .build())</span>
+<span class="nc" id="L115">                .toList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

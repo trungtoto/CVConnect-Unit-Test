@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Menu.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.entity</a> &gt; <span class="el_source">Menu.java</span></div><h1>Menu.java</h1><pre class="source lang-java linenums">package com.cvconnect.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import nmquan.commonlib.model.BaseEntity;
+
+@Getter
+@Setter
+@Entity
+@Table(name = &quot;menus&quot;, schema = &quot;cvconnect-user-service&quot;)
+<span class="nc" id="L16">public class Menu extends BaseEntity {</span>
+    @Size(max = 100)
+    @NotNull
+    @Column(name = &quot;code&quot;, nullable = false, length = 100)
+    private String code;
+
+    @Size(max = 255)
+    @NotNull
+    @Column(name = &quot;label&quot;, nullable = false)
+    private String label;
+
+    @Size(max = 255)
+    @Column(name = &quot;icon&quot;)
+    private String icon;
+
+    @Size(max = 255)
+    @Column(name = &quot;url&quot;)
+    private String url;
+
+    @Column(name = &quot;parent_id&quot;)
+    private Long parentId;
+
+    @Column(name = &quot;sort_order&quot;, nullable = false)
+    private Integer sortOrder;
+
+    @Column(name = &quot;for_member_type&quot;)
+    private String forMemberType;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

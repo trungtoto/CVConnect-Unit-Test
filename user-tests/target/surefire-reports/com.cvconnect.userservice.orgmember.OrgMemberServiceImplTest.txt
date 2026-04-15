@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.cvconnect.userservice.orgmember.OrgMemberServiceImplTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.813 s -- in com.cvconnect.userservice.orgmember.OrgMemberServiceImplTest

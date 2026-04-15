@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RestTemplateClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.common</a> &gt; <span class="el_source">RestTemplateClient.java</span></div><h1>RestTemplateClient.java</h1><pre class="source lang-java linenums">package com.cvconnect.common;
+
+import com.cvconnect.dto.failedRollback.FailedRollbackOrgCreation;
+import com.cvconnect.dto.internal.response.AttachFileDto;
+import com.cvconnect.dto.auth.OrganizationRequest;
+import com.cvconnect.dto.internal.response.OrgDto;
+import nmquan.commonlib.dto.request.ObjectAndFileRequest;
+import nmquan.commonlib.dto.response.IDResponse;
+import nmquan.commonlib.dto.response.Response;
+import nmquan.commonlib.service.RestTemplateService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
+@Component
+<span class="nc" id="L20">public class RestTemplateClient {</span>
+    @Autowired
+    private RestTemplateService restTemplateService;
+
+    @Value(&quot;${server.core_service}&quot;)
+    private String SERVER_CORE_SERVICE;
+    @Value(&quot;${server.notify_service}&quot;)
+    private String SERVER_NOTIFY_SERVICE;
+
+
+    public OrgDto getOrgById(Long orgId) {
+<span class="nc" id="L31">        Response&lt;OrgDto&gt; orgDtoResponse = restTemplateService.getMethodRestTemplate(</span>
+                SERVER_CORE_SERVICE + &quot;/org/internal/get-by-id/{orgId}&quot;,
+<span class="nc" id="L33">                new ParameterizedTypeReference&lt;Response&lt;OrgDto&gt;&gt;() {},</span>
+                orgId
+        );
+<span class="nc" id="L36">        return orgDtoResponse.getData();</span>
+    }
+
+    public AttachFileDto getAttachFileById(Long attachFileId) {
+<span class="nc" id="L40">        Response&lt;AttachFileDto&gt; response = restTemplateService.getMethodRestTemplate(</span>
+                SERVER_CORE_SERVICE + &quot;/attach-file/internal/get-by-id/{avatarId}&quot;,
+<span class="nc" id="L42">                new ParameterizedTypeReference&lt;Response&lt;AttachFileDto&gt;&gt;() {},</span>
+                attachFileId
+        );
+<span class="nc" id="L45">        return response.getData();</span>
+    }
+
+    public IDResponse&lt;Long&gt; createOrg(ObjectAndFileRequest&lt;OrganizationRequest&gt; request){
+<span class="nc" id="L49">        Response&lt;IDResponse&lt;Long&gt;&gt; response = restTemplateService.uploadFilesWithObject(</span>
+                SERVER_CORE_SERVICE + &quot;/org/internal/create&quot;,
+<span class="nc" id="L51">                new ParameterizedTypeReference&lt;Response&lt;IDResponse&lt;Long&gt;&gt;&gt;() {},</span>
+                request
+        );
+<span class="nc" id="L54">        return response.getData();</span>
+    }
+
+    public List&lt;Long&gt; uploadFile(MultipartFile[] files) {
+<span class="nc" id="L58">        Response&lt;List&lt;Long&gt;&gt; response = restTemplateService.uploadFiles(</span>
+                SERVER_CORE_SERVICE + &quot;/attach-file/internal/uploads&quot;,
+<span class="nc" id="L60">                new ParameterizedTypeReference&lt;Response&lt;List&lt;Long&gt;&gt;&gt;() {},</span>
+                files
+        );
+<span class="nc" id="L63">        return response.getData();</span>
+    }
+
+    public void deleteAttachFilesByIds(List&lt;Long&gt; ids) {
+<span class="nc" id="L67">        restTemplateService.postMethodRestTemplate(</span>
+                SERVER_CORE_SERVICE + &quot;/attach-file/internal/delete-by-ids&quot;,
+<span class="nc" id="L69">                new ParameterizedTypeReference&lt;Response&lt;Void&gt;&gt;() {},</span>
+                ids
+        );
+<span class="nc" id="L72">    }</span>
+
+    // rollback org creation
+    public void deleteOrg(FailedRollbackOrgCreation payload) {
+<span class="nc" id="L76">        restTemplateService.postMethodRestTemplate(</span>
+                SERVER_CORE_SERVICE + &quot;/org/internal/delete&quot;,
+<span class="nc" id="L78">                new ParameterizedTypeReference&lt;Response&lt;Void&gt;&gt;() {},</span>
+                payload
+        );
+<span class="nc" id="L81">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

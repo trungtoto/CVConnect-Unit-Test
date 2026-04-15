@@ -1,0 +1,8 @@
+com\cvconnect\userservice\failedrollback\FailedRollbackRetryJobTest.class
+com\cvconnect\userservice\user\UserServiceImplTest.class
+com\cvconnect\userservice\orgmember\OrgMemberServiceImplTest.class
+com\cvconnect\userservice\security\JwtUtilsTest.class
+com\cvconnect\userservice\failedrollback\FailedRollbackHandlerRegistryTest.class
+com\cvconnect\userservice\job\JobConfigServiceImplTest.class
+com\cvconnect\userservice\failedrollback\FailedRollbackServiceImplTest.class
+com\cvconnect\userservice\job\JobSchedulerTest.class

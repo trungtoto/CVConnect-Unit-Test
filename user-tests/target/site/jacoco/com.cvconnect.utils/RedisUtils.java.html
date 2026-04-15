@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RedisUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.utils</a> &gt; <span class="el_source">RedisUtils.java</span></div><h1>RedisUtils.java</h1><pre class="source lang-java linenums">package com.cvconnect.utils;
+
+import nmquan.commonlib.utils.ObjectMapperUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+
+@Component
+<span class="nc" id="L12">public class RedisUtils {</span>
+    @Autowired
+    private RedisTemplate&lt;String, Object&gt; redisTemplate;
+    @Value(&quot;${redis.token-key}&quot;)
+    private String REDIS_TOKEN_KEY;
+
+    public &lt;T&gt; void saveObject(String key, T object, int duration) {
+<span class="nc" id="L19">        Duration ttl = Duration.ofSeconds(duration);</span>
+<span class="nc" id="L20">        redisTemplate.opsForValue().set(key, object, ttl);</span>
+<span class="nc" id="L21">    }</span>
+
+    public void deleteByKey(String key) {
+<span class="nc" id="L24">        redisTemplate.delete(key);</span>
+<span class="nc" id="L25">    }</span>
+
+    public &lt;T&gt; T getObject(String key, Class&lt;T&gt; clazz) {
+<span class="nc" id="L28">        Object obj = redisTemplate.opsForValue().get(key);</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (obj == null) return null;</span>
+<span class="nc" id="L30">        return ObjectMapperUtils.convertToObject(obj, clazz);</span>
+    }
+
+    public String getTokenKey(String token) {
+<span class="nc" id="L34">        return REDIS_TOKEN_KEY + &quot;:&quot; + token;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

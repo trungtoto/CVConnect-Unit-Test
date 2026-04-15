@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthProvider.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.config.security</a> &gt; <span class="el_source">AuthProvider.java</span></div><h1>AuthProvider.java</h1><pre class="source lang-java linenums">package com.cvconnect.config.security;
+
+import com.cvconnect.enums.UserErrorCode;
+import com.cvconnect.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import nmquan.commonlib.exception.AppException;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+@RequiredArgsConstructor
+public class AuthProvider {
+    private final UserRepository userRepository;
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+<span class="nc" id="L24">        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();</span>
+<span class="nc" id="L25">        authProvider.setUserDetailsService(userDetailsService());</span>
+<span class="nc" id="L26">        authProvider.setPasswordEncoder(passwordEncoder());</span>
+<span class="nc" id="L27">        return authProvider;</span>
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+<span class="nc" id="L32">        return username -&gt; userRepository.findByUsernameLogin(username).orElseThrow(() -&gt;</span>
+<span class="nc" id="L33">                new AppException(UserErrorCode.LOGIN_FAIL)</span>
+        );
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+<span class="nc" id="L39">        return new BCryptPasswordEncoder();</span>
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+<span class="nc" id="L44">        return authenticationConfiguration.getAuthenticationManager();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RedisConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.config.redis</a> &gt; <span class="el_source">RedisConfig.java</span></div><h1>RedisConfig.java</h1><pre class="source lang-java linenums">package com.cvconnect.config.redis;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+@Configuration
+<span class="nc" id="L17">public class RedisConfig {</span>
+
+    @Value(&quot;${server.host_redis}&quot;)
+    private String REDIS_HOST;
+
+    @Value(&quot;${server.port_redis}&quot;)
+    private int REDIS_PORT;
+
+    @Bean
+    public JedisConnectionFactory connectionFactory() {
+<span class="nc" id="L27">        RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();</span>
+<span class="nc" id="L28">        configuration.setHostName(REDIS_HOST);</span>
+<span class="nc" id="L29">        configuration.setPort(REDIS_PORT);</span>
+<span class="nc" id="L30">        return new JedisConnectionFactory(configuration);</span>
+    }
+
+    @Bean
+    public RedisTemplate&lt;String, Object&gt; redisTemplate() {
+<span class="nc" id="L35">        RedisTemplate&lt;String, Object&gt; template = new RedisTemplate&lt;&gt;();</span>
+<span class="nc" id="L36">        template.setConnectionFactory(connectionFactory());</span>
+
+<span class="nc" id="L38">        template.setKeySerializer(new StringRedisSerializer());</span>
+<span class="nc" id="L39">        template.setHashKeySerializer(new StringRedisSerializer());</span>
+
+<span class="nc" id="L41">        ObjectMapper objectMapper = new ObjectMapper();</span>
+<span class="nc" id="L42">        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);</span>
+<span class="nc" id="L43">        objectMapper.registerModule(new JavaTimeModule());</span>
+<span class="nc" id="L44">        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);</span>
+
+<span class="nc" id="L46">        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);</span>
+
+<span class="nc" id="L48">        template.setValueSerializer(serializer);</span>
+<span class="nc" id="L49">        template.setHashValueSerializer(serializer);</span>
+
+<span class="nc" id="L51">        template.setEnableTransactionSupport(true);</span>
+<span class="nc" id="L52">        template.afterPropertiesSet();</span>
+<span class="nc" id="L53">        return template;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

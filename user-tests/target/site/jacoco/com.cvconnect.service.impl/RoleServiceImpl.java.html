@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoleServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.service.impl</a> &gt; <span class="el_source">RoleServiceImpl.java</span></div><h1>RoleServiceImpl.java</h1><pre class="source lang-java linenums">package com.cvconnect.service.impl;
+
+import com.cvconnect.constant.Constants;
+import com.cvconnect.dto.menu.MenuDto;
+import com.cvconnect.dto.orgMember.OrgMemberDto;
+import com.cvconnect.dto.role.MemberTypeDto;
+import com.cvconnect.dto.role.RoleDto;
+import com.cvconnect.dto.role.RoleFilterRequest;
+import com.cvconnect.dto.role.RoleRequest;
+import com.cvconnect.dto.roleMenu.RoleMenuDto;
+import com.cvconnect.dto.roleUser.RoleUserDto;
+import com.cvconnect.entity.Role;
+import com.cvconnect.enums.MemberType;
+import com.cvconnect.enums.UserErrorCode;
+import com.cvconnect.repository.RoleRepository;
+import com.cvconnect.service.*;
+import nmquan.commonlib.constant.CommonConstants;
+import nmquan.commonlib.dto.response.FilterResponse;
+import nmquan.commonlib.dto.response.IDResponse;
+import nmquan.commonlib.exception.AppException;
+import nmquan.commonlib.utils.DateUtils;
+import nmquan.commonlib.utils.ObjectMapperUtils;
+import nmquan.commonlib.utils.PageUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+@Service
+<span class="nc" id="L38">public class RoleServiceImpl implements RoleService {</span>
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private MenuService menuService;
+    @Autowired
+    private RoleMenuService roleMenuService;
+    @Autowired
+    private RoleUserService roleUserService;
+    @Lazy
+    @Autowired
+    private OrgMemberService orgMemberService;
+
+    @Override
+    public RoleDto getRoleByCode(String code) {
+<span class="nc" id="L53">        Role role = roleRepository.findByCode(code);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if(role == null) {</span>
+<span class="nc" id="L55">            return null;</span>
+        }
+<span class="nc" id="L57">        return RoleDto.builder()</span>
+<span class="nc" id="L58">                .id(role.getId())</span>
+<span class="nc" id="L59">                .code(role.getCode())</span>
+<span class="nc" id="L60">                .name(role.getName())</span>
+<span class="nc" id="L61">                .memberType(role.getMemberType())</span>
+<span class="nc" id="L62">                .build();</span>
+    }
+
+    @Override
+    public RoleDto getRoleById(Long id) {
+<span class="nc" id="L67">        Role role = roleRepository.findById(id).orElseThrow(() -&gt; new AppException(UserErrorCode.ROLE_NOT_FOUND));</span>
+<span class="nc" id="L68">        return RoleDto.builder()</span>
+<span class="nc" id="L69">                .id(role.getId())</span>
+<span class="nc" id="L70">                .code(role.getCode())</span>
+<span class="nc" id="L71">                .name(role.getName())</span>
+<span class="nc" id="L72">                .memberType(role.getMemberType())</span>
+<span class="nc" id="L73">                .build();</span>
+    }
+
+    @Override
+    public List&lt;MemberTypeDto&gt; getAllMemberTypes() {
+<span class="nc" id="L78">        return Arrays.stream(MemberType.values())</span>
+<span class="nc" id="L79">                .map(mt -&gt; MemberTypeDto.builder()</span>
+<span class="nc" id="L80">                        .code(mt.name())</span>
+<span class="nc" id="L81">                        .name(mt.getName())</span>
+<span class="nc" id="L82">                        .build())</span>
+<span class="nc" id="L83">                .toList();</span>
+    }
+
+    @Override
+    @Transactional
+    public IDResponse&lt;Long&gt; createRoles(RoleRequest request) {
+<span class="nc" id="L89">        Role roleCheckExists = roleRepository.findByCode(request.getCode());</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if(roleCheckExists != null) {</span>
+<span class="nc" id="L91">            throw new AppException(UserErrorCode.ROLE_CODE_EXISTED);</span>
+        }
+<span class="nc" id="L93">        Role role = new Role();</span>
+<span class="nc" id="L94">        role.setCode(request.getCode());</span>
+<span class="nc" id="L95">        role.setName(request.getName());</span>
+<span class="nc" id="L96">        role.setMemberType(request.getMemberType());</span>
+<span class="nc" id="L97">        roleRepository.save(role);</span>
+
+<span class="nc" id="L99">        this.saveRoleMenus(role, request.getRoleMenus());</span>
+
+<span class="nc" id="L101">        return IDResponse.&lt;Long&gt;builder()</span>
+<span class="nc" id="L102">                .id(role.getId())</span>
+<span class="nc" id="L103">                .build();</span>
+    }
+
+    @Override
+    @Transactional
+    public IDResponse&lt;Long&gt; updateRoles(RoleRequest request) {
+<span class="nc" id="L109">        Role role = roleRepository.findById(request.getId())</span>
+<span class="nc" id="L110">                .orElseThrow(() -&gt; new AppException(UserErrorCode.ROLE_NOT_FOUND));</span>
+<span class="nc" id="L111">        boolean isImportant = Constants.RoleCode.getAllRoleCodes().contains(role.getCode());</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if(!isImportant) {</span>
+<span class="nc" id="L113">            Role roleCheckExists = roleRepository.findByCode(request.getCode());</span>
+<span class="nc bnc" id="L114" title="All 4 branches missed.">            if(roleCheckExists != null &amp;&amp; !Objects.equals(roleCheckExists.getId(), request.getId())) {</span>
+<span class="nc" id="L115">                throw new AppException(UserErrorCode.ROLE_CODE_EXISTED);</span>
+            }
+<span class="nc" id="L117">            role.setCode(request.getCode());</span>
+<span class="nc" id="L118">            role.setMemberType(request.getMemberType());</span>
+        }
+<span class="nc" id="L120">        role.setName(request.getName());</span>
+<span class="nc" id="L121">        roleRepository.save(role);</span>
+<span class="nc" id="L122">        roleMenuService.deleteByRoleId(role.getId());</span>
+<span class="nc" id="L123">        this.saveRoleMenus(role, request.getRoleMenus());</span>
+
+<span class="nc" id="L125">        return IDResponse.&lt;Long&gt;builder()</span>
+<span class="nc" id="L126">                .id(role.getId())</span>
+<span class="nc" id="L127">                .build();</span>
+    }
+
+    @Override
+    public FilterResponse&lt;RoleDto&gt; filter(RoleFilterRequest request) {
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        if (request.getCreatedAtEnd() != null) {</span>
+<span class="nc" id="L133">            request.setCreatedAtEnd(DateUtils.endOfDay(request.getCreatedAtEnd(), CommonConstants.ZONE.UTC));</span>
+        }
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (request.getUpdatedAtEnd() != null) {</span>
+<span class="nc" id="L136">            request.setUpdatedAtEnd(DateUtils.endOfDay(request.getUpdatedAtEnd(), CommonConstants.ZONE.UTC));</span>
+        }
+<span class="nc" id="L138">        Page&lt;RoleDto&gt; page = roleRepository.filter(request, request.getPageable());</span>
+<span class="nc" id="L139">        List&lt;String&gt; roleCode = Constants.RoleCode.getAllRoleCodes();</span>
+<span class="nc" id="L140">        List&lt;RoleDto&gt; data = page.getContent().stream()</span>
+<span class="nc" id="L141">                .map(dto -&gt; {</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                    if (roleCode.contains(dto.getCode())) {</span>
+<span class="nc" id="L143">                        dto.setCanDelete(false);</span>
+                    } else {
+<span class="nc" id="L145">                        dto.setCanDelete(true);</span>
+                    }
+<span class="nc" id="L147">                    MemberTypeDto memberTypeDto = MemberTypeDto.builder()</span>
+<span class="nc" id="L148">                            .code(dto.getMemberType().name())</span>
+<span class="nc" id="L149">                            .memberType(dto.getMemberType().getName())</span>
+<span class="nc" id="L150">                            .build();</span>
+<span class="nc" id="L151">                    dto.setMemberTypeDto(memberTypeDto);</span>
+<span class="nc" id="L152">                    dto.setMemberType(null);</span>
+<span class="nc" id="L153">                    return dto;</span>
+<span class="nc" id="L154">                }).toList();</span>
+<span class="nc" id="L155">        return PageUtils.toFilterResponse(page, data);</span>
+    }
+
+    @Override
+    @Transactional
+    public void deleteByIds(List&lt;Long&gt; ids) {
+<span class="nc" id="L161">        List&lt;Role&gt; roles = roleRepository.findAllById(ids);</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if(roles.size() != ids.size()) {</span>
+<span class="nc" id="L163">            throw new AppException(UserErrorCode.ROLE_NOT_FOUND);</span>
+        }
+<span class="nc" id="L165">        List&lt;String&gt; roleCode = Constants.RoleCode.getAllRoleCodes();</span>
+<span class="nc" id="L166">        roles.forEach(role -&gt; {</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            if(roleCode.contains(role.getCode())) {</span>
+<span class="nc" id="L168">                throw new AppException(UserErrorCode.CANNOT_DELETE_ROLE);</span>
+            }
+<span class="nc" id="L170">        });</span>
+<span class="nc" id="L171">        roleRepository.deleteByIds(ids);</span>
+<span class="nc" id="L172">    }</span>
+
+    @Override
+    public List&lt;RoleDto&gt; getRoleByUserId(Long userId) {
+<span class="nc" id="L176">        return roleRepository.getRoleByUserId(userId);</span>
+    }
+
+    @Override
+    public List&lt;RoleDto&gt; getRoleUseByUserId(Long userId) {
+<span class="nc" id="L181">        OrgMemberDto orgMember = orgMemberService.getOrgMember(userId);</span>
+<span class="nc" id="L182">        return roleRepository.getRoleByUserId(userId).stream()</span>
+<span class="nc bnc" id="L183" title="All 4 branches missed.">                .filter(role -&gt; orgMember != null || !MemberType.ORGANIZATION.equals(role.getMemberType()))</span>
+<span class="nc" id="L184">                .toList();</span>
+    }
+
+    @Override
+    public RoleDto getDetail(Long id) {
+<span class="nc" id="L189">        Role role = roleRepository.findById(id).orElse(null);</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        if(role == null) {</span>
+<span class="nc" id="L191">            throw new AppException(UserErrorCode.ROLE_NOT_FOUND);</span>
+        }
+<span class="nc" id="L193">        return RoleDto.builder()</span>
+<span class="nc" id="L194">                .id(role.getId())</span>
+<span class="nc" id="L195">                .code(role.getCode())</span>
+<span class="nc" id="L196">                .name(role.getName())</span>
+<span class="nc" id="L197">                .memberTypeDto(MemberTypeDto.builder()</span>
+<span class="nc" id="L198">                        .code(role.getMemberType().name())</span>
+<span class="nc" id="L199">                        .name(role.getMemberType().getName())</span>
+<span class="nc" id="L200">                        .build())</span>
+<span class="nc" id="L201">                .roleMenus(roleMenuService.findByRoleId(id))</span>
+<span class="nc" id="L202">                .build();</span>
+    }
+
+    @Override
+    public Map&lt;Long, List&lt;RoleDto&gt;&gt; getRolesByUserIds(List&lt;Long&gt; userIds) {
+<span class="nc" id="L207">        List&lt;RoleUserDto&gt; roleUsers = roleUserService.getRolesByUserIds(userIds);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (ObjectUtils.isEmpty(roleUsers)) {</span>
+<span class="nc" id="L209">            return Map.of();</span>
+        }
+<span class="nc" id="L211">        return roleUsers.stream()</span>
+<span class="nc" id="L212">                .collect(Collectors.groupingBy(</span>
+                        RoleUserDto::getUserId,
+<span class="nc" id="L214">                        Collectors.mapping(RoleUserDto::getRole, Collectors.toList())</span>
+                ));
+    }
+
+    @Override
+    public List&lt;RoleDto&gt; getRoleByIds(List&lt;Long&gt; ids) {
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        if(ObjectUtils.isEmpty(ids)) {</span>
+<span class="nc" id="L221">            return List.of();</span>
+        }
+<span class="nc" id="L223">        List&lt;Role&gt; roles = roleRepository.findAllById(ids);</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if(ObjectUtils.isEmpty(roles)) {</span>
+<span class="nc" id="L225">            return List.of();</span>
+        }
+<span class="nc" id="L227">        return ObjectMapperUtils.convertToList(roles, RoleDto.class);</span>
+    }
+
+    @Override
+    public List&lt;RoleDto&gt; getByMemberType(MemberType memberType) {
+<span class="nc" id="L232">        List&lt;Role&gt; roles = roleRepository.findByMemberType(memberType);</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        if(ObjectUtils.isEmpty(roles)) {</span>
+<span class="nc" id="L234">            return List.of();</span>
+        }
+<span class="nc" id="L236">        return ObjectMapperUtils.convertToList(roles, RoleDto.class);</span>
+    }
+
+
+    void saveRoleMenus(Role role, List&lt;RoleMenuDto&gt; roleMenus) {
+<span class="nc bnc" id="L241" title="All 4 branches missed.">        if(roleMenus != null &amp;&amp; !roleMenus.isEmpty()) {</span>
+<span class="nc" id="L242">            List&lt;Long&gt; menuIds = roleMenus.stream()</span>
+<span class="nc" id="L243">                    .map(RoleMenuDto::getMenuId)</span>
+<span class="nc" id="L244">                    .toList();</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">            if(menuIds.size() != roleMenus.size()) {</span>
+<span class="nc" id="L246">                throw new AppException(UserErrorCode.MENU_NOT_FOUND);</span>
+            }
+<span class="nc" id="L248">            List&lt;MenuDto&gt; menus = menuService.getMenuByIds(menuIds);</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">            if(menuIds.size() != menus.size()) {</span>
+<span class="nc" id="L250">                throw new AppException(UserErrorCode.MENU_NOT_FOUND);</span>
+            }
+<span class="nc bnc" id="L252" title="All 2 branches missed.">            for (MenuDto menu : menus) {</span>
+<span class="nc" id="L253">                String requiredType = menu.getForMemberType();</span>
+<span class="nc bnc" id="L254" title="All 4 branches missed.">                if (requiredType != null &amp;&amp; !Objects.equals(requiredType, role.getMemberType().name())) {</span>
+<span class="nc" id="L255">                    throw new AppException(UserErrorCode.MENU_NOT_FOUND);</span>
+                }
+<span class="nc" id="L257">            }</span>
+<span class="nc" id="L258">            List&lt;RoleMenuDto&gt; roleMenuDtos = roleMenus.stream()</span>
+<span class="nc" id="L259">                    .map(rm -&gt; {</span>
+<span class="nc bnc" id="L260" title="All 4 branches missed.">                        if (rm.getPermissions() != null &amp;&amp; rm.getPermissions().isEmpty()) {</span>
+<span class="nc" id="L261">                            return null;</span>
+                        }
+<span class="nc" id="L263">                        return RoleMenuDto.builder()</span>
+<span class="nc" id="L264">                                .roleId(role.getId())</span>
+<span class="nc" id="L265">                                .menuId(rm.getMenuId())</span>
+<span class="nc" id="L266">                                .permissions(rm.getPermissions())</span>
+<span class="nc" id="L267">                                .build();</span>
+                    })
+<span class="nc" id="L269">                    .filter(Objects::nonNull)</span>
+<span class="nc" id="L270">                    .toList();</span>
+<span class="nc" id="L271">            roleMenuService.saveAll(roleMenuDtos);</span>
+        }
+<span class="nc" id="L273">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

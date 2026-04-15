@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package com.cvconnect.controller;
+
+import com.cvconnect.constant.Messages;
+import com.cvconnect.dto.auth.*;
+import com.cvconnect.enums.UserErrorCode;
+import com.cvconnect.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import nmquan.commonlib.dto.response.Response;
+import nmquan.commonlib.exception.AppException;
+import nmquan.commonlib.exception.ErrorCode;
+import nmquan.commonlib.utils.JwtUtils;
+import nmquan.commonlib.utils.LocalizationUtils;
+import nmquan.commonlib.utils.ResponseUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+@RequestMapping(&quot;/auth&quot;)
+<span class="nc" id="L24">public class AuthController {</span>
+    @Autowired
+    private AuthService authService;
+    @Autowired
+    private LocalizationUtils localizationUtils;
+
+    // public API
+    @PostMapping(&quot;/login&quot;)
+    @Operation(summary = &quot;Login API&quot;, description = &quot;Authenticate user and return access token&quot;)
+    public ResponseEntity&lt;Response&lt;LoginResponse&gt;&gt; login(@Valid @RequestBody LoginRequest loginRequest,
+                                                         HttpServletResponse httpServletResponse) {
+<span class="nc" id="L35">        return ResponseUtils.success(authService.login(loginRequest, httpServletResponse),</span>
+<span class="nc" id="L36">                localizationUtils.getLocalizedMessage(Messages.LOGIN_SUCCESS));</span>
+    }
+
+    // public API
+    @PostMapping(&quot;/refresh&quot;)
+    @Operation(summary = &quot;Refresh Token API&quot;)
+    public ResponseEntity&lt;Response&lt;RefreshTokenResponse&gt;&gt; refreshToken(HttpServletRequest httpServletRequest
+            , HttpServletResponse httpServletResponse) {
+<span class="nc" id="L44">        return ResponseUtils.success(authService.refreshToken(httpServletRequest, httpServletResponse));</span>
+    }
+
+    // public API
+    @PostMapping(&quot;/logout&quot;)
+    @Operation(summary = &quot;Logout API&quot;)
+    public ResponseEntity&lt;Response&lt;Void&gt;&gt; logout(HttpServletRequest httpServletRequest
+            , HttpServletResponse httpServletResponse) {
+<span class="nc" id="L52">        authService.logout(httpServletRequest, httpServletResponse);</span>
+<span class="nc" id="L53">        return ResponseUtils.success(null);</span>
+    }
+
+    // public API
+    @PostMapping(&quot;/register-candidate&quot;)
+    @Operation(summary = &quot;Register Candidate API&quot;)
+    public ResponseEntity&lt;Response&lt;RegisterCandidateResponse&gt;&gt; registerCandidate(@Valid @RequestBody RegisterCandidateRequest request) {
+<span class="nc" id="L60">        return ResponseUtils.success(authService.registerCandidate(request),</span>
+<span class="nc" id="L61">                localizationUtils.getLocalizedMessage(Messages.REGISTER_SUCCESS));</span>
+    }
+
+    // public API
+    @PostMapping(&quot;/register-org-admin&quot;)
+    @Operation(summary = &quot;Register Org Admin API&quot;)
+    public ResponseEntity&lt;Response&lt;RegisterOrgAdminResponse&gt;&gt; registerOrgAdmin(@Valid @RequestPart RegisterOrgAdminRequest request,
+                                                                               @RequestPart(required = false) MultipartFile logo,
+                                                                               @RequestPart(required = false) MultipartFile coverPhoto) {
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if(logo == null) {</span>
+<span class="nc" id="L71">            throw new AppException(UserErrorCode.LOGO_REQUIRE);</span>
+        }
+<span class="nc" id="L73">        return ResponseUtils.success(authService.registerOrgAdmin(request, logo, coverPhoto),</span>
+<span class="nc" id="L74">                localizationUtils.getLocalizedMessage(Messages.REGISTER_SUCCESS));</span>
+    }
+
+    // public API
+    @PostMapping(&quot;/verify&quot;)
+    @Operation(summary = &quot;Verify Token API&quot;)
+    public ResponseEntity&lt;Response&lt;VerifyResponse&gt;&gt; verify(@RequestBody VerifyRequest verifyRequest) {
+<span class="nc" id="L81">        return ResponseUtils.success(authService.verify(verifyRequest));</span>
+    }
+
+    // public API
+    @PostMapping(&quot;/verify-token&quot;)
+    @Operation(summary = &quot;Verify Token API&quot;)
+    public ResponseEntity&lt;Response&lt;VerifyResponse&gt;&gt; verifyToken(HttpServletRequest httpServletRequest) {
+<span class="nc" id="L88">        String token = JwtUtils.getToken(httpServletRequest);</span>
+<span class="nc" id="L89">        VerifyRequest verifyRequest = new VerifyRequest();</span>
+<span class="nc" id="L90">        verifyRequest.setToken(token);</span>
+<span class="nc" id="L91">        return ResponseUtils.success(authService.verify(verifyRequest));</span>
+    }
+
+    // public API
+    @GetMapping(&quot;/request-resend-verify-email&quot;)
+    @Operation(summary = &quot;Request Resend Verify Email API&quot;)
+    public ResponseEntity&lt;Response&lt;RequestResendVerifyEmailResponse&gt;&gt; requestResendVerifyEmail(@RequestParam String identifier) {
+<span class="nc" id="L98">        return ResponseUtils.success(authService.requestResendVerifyEmail(identifier),</span>
+<span class="nc" id="L99">                localizationUtils.getLocalizedMessage(Messages.REQUEST_RESEND_VERIFY_EMAIL_SUCCESS));</span>
+    }
+
+    // public API
+    @PutMapping(&quot;/verify-email/{token}&quot;)
+    @Operation(summary = &quot;Verify Email API&quot;)
+    public ResponseEntity&lt;Response&lt;VerifyEmailResponse&gt;&gt; verifyEmail(@PathVariable String token) {
+<span class="nc" id="L106">        return ResponseUtils.success(authService.verifyEmail(token), localizationUtils.getLocalizedMessage(Messages.VERIFY_EMAIL_SUCCESS));</span>
+    }
+
+    // public API
+    @GetMapping(&quot;/request-reset-password&quot;)
+    @Operation(summary = &quot;Request Reset Password API&quot;)
+    public ResponseEntity&lt;Response&lt;RequestResetPasswordResponse&gt;&gt; requestResetPassword(@RequestParam String identifier) {
+<span class="nc" id="L113">        return ResponseUtils.success(authService.requestResetPassword(identifier),</span>
+<span class="nc" id="L114">                localizationUtils.getLocalizedMessage(Messages.REQUEST_RESET_PASSWORD_SUCCESS));</span>
+    }
+
+    // public API
+    @PutMapping(&quot;/reset-password&quot;)
+    @Operation(summary = &quot;Reset Password API&quot;)
+    public ResponseEntity&lt;Response&lt;ResetPasswordResponse&gt;&gt; resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+<span class="nc" id="L121">        return ResponseUtils.success(authService.resetPassword(resetPasswordRequest),</span>
+<span class="nc" id="L122">                localizationUtils.getLocalizedMessage(Messages.RESET_PASSWORD_SUCCESS));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

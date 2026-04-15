@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrgMemberDto.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.dto.orgMember</a> &gt; <span class="el_source">OrgMemberDto.java</span></div><h1>OrgMemberDto.java</h1><pre class="source lang-java linenums">package com.cvconnect.dto.orgMember;
+
+import com.cvconnect.dto.internal.response.OrgDto;
+import com.cvconnect.dto.user.UserDto;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+import java.time.Instant;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class OrgMemberDto extends UserDto {
+    private Long userId;
+    private Long orgId;
+    private String inviter;
+
+    private OrgDto org;
+
+    public Long id;
+    public Boolean isActive;
+    public Boolean isDeleted;
+    public String createdBy;
+    public String updatedBy;
+    public Instant createdAt;
+    public Instant updatedAt;
+
+    public void setUserDto(UserDto userDto) {
+<span class="nc" id="L34">        this.setId(null);</span>
+<span class="nc" id="L35">        this.setUsername(userDto.getUsername());</span>
+<span class="nc" id="L36">        this.setEmail(userDto.getEmail());</span>
+<span class="nc" id="L37">        this.setFullName(userDto.getFullName());</span>
+<span class="nc" id="L38">        this.setPhoneNumber(userDto.getPhoneNumber());</span>
+<span class="nc" id="L39">        this.setDateOfBirth(userDto.getDateOfBirth());</span>
+<span class="nc" id="L40">        this.setIsEmailVerified(userDto.getIsEmailVerified());</span>
+<span class="nc" id="L41">        this.setAvatarUrl(userDto.getAvatarUrl());</span>
+<span class="nc" id="L42">        this.setIsDeleted(null);</span>
+<span class="nc" id="L43">        this.setCreatedBy(null);</span>
+<span class="nc" id="L44">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

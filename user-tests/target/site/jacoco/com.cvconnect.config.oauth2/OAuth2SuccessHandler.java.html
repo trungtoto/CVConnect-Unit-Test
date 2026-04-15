@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OAuth2SuccessHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.config.oauth2</a> &gt; <span class="el_source">OAuth2SuccessHandler.java</span></div><h1>OAuth2SuccessHandler.java</h1><pre class="source lang-java linenums">package com.cvconnect.config.oauth2;
+
+import com.cvconnect.constant.Constants;
+import com.cvconnect.utils.JwtUtils;
+import com.cvconnect.dto.common.TokenInfo;
+import com.cvconnect.entity.User;
+import com.cvconnect.enums.TokenType;
+import com.cvconnect.utils.CookieUtils;
+import com.cvconnect.utils.RedisUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+
+@Component
+<span class="nc" id="L21">public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {</span>
+
+    @Autowired
+    private JwtUtils jwtUtils;
+    @Autowired
+    private RedisUtils redisUtils;
+    @Value(&quot;${frontend.url}&quot;)
+    private String FRONTEND_URL;
+
+    @Value(&quot;${jwt.refresh-expiration}&quot;)
+    private int JWT_REFRESHABLE_DURATION;
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        Authentication authentication) throws IOException {
+<span class="nc" id="L37">        User user = (User) authentication.getPrincipal();</span>
+<span class="nc" id="L38">        String refreshToken = jwtUtils.generateRefreshToken();</span>
+<span class="nc" id="L39">        String refreshTokenKey = redisUtils.getTokenKey(refreshToken);</span>
+<span class="nc" id="L40">        TokenInfo tokenInfo = TokenInfo.builder()</span>
+<span class="nc" id="L41">                .userId(user.getId())</span>
+<span class="nc" id="L42">                .type(TokenType.REFRESH)</span>
+<span class="nc" id="L43">                .build();</span>
+<span class="nc" id="L44">        redisUtils.saveObject(refreshTokenKey, tokenInfo, JWT_REFRESHABLE_DURATION);</span>
+<span class="nc" id="L45">        CookieUtils.setRefreshTokenCookie(refreshToken, JWT_REFRESHABLE_DURATION, response);</span>
+
+<span class="nc" id="L47">        getRedirectStrategy().sendRedirect(request, response, FRONTEND_URL + Constants.Path.LOGIN_SUCCESS_METHOD);</span>
+<span class="nc" id="L48">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

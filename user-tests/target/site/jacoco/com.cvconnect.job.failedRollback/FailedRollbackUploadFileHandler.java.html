@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FailedRollbackUploadFileHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.job.failedRollback</a> &gt; <span class="el_source">FailedRollbackUploadFileHandler.java</span></div><h1>FailedRollbackUploadFileHandler.java</h1><pre class="source lang-java linenums">package com.cvconnect.job.failedRollback;
+
+import com.cvconnect.common.RestTemplateClient;
+import com.cvconnect.dto.failedRollback.FailedRollbackDto;
+import com.cvconnect.dto.failedRollback.FailedRollbackUploadFile;
+import com.cvconnect.enums.FailedRollbackType;
+import nmquan.commonlib.utils.ObjectMapperUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+<span class="nc" id="L12">public class FailedRollbackUploadFileHandler implements FailedRollbackHandler {</span>
+    @Autowired
+    private RestTemplateClient restTemplateClient;
+
+    @Override
+    public FailedRollbackType getType() {
+<span class="nc" id="L18">        return FailedRollbackType.UPLOAD_FILE;</span>
+    }
+
+    @Override
+    public void rollback(FailedRollbackDto dto) {
+<span class="nc" id="L23">        FailedRollbackUploadFile uploadFile = ObjectMapperUtils.convertToObject(dto, FailedRollbackUploadFile.class);</span>
+<span class="nc" id="L24">        restTemplateClient.deleteAttachFilesByIds(uploadFile.getAttachFileIds());</span>
+<span class="nc" id="L25">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

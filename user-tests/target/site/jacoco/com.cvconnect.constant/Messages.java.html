@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Messages.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.constant</a> &gt; <span class="el_source">Messages.java</span></div><h1>Messages.java</h1><pre class="source lang-java linenums">package com.cvconnect.constant;
+
+<span class="nc" id="L3">public class Messages {</span>
+    /*
+     * Error messages
+     * */
+    public static final String LOGIN_FAILED= &quot;login.failed&quot;;
+    public static final String ROLE_NOT_FOUND = &quot;role.not.found&quot;;
+    public static final String USER_NOT_FOUND = &quot;user.not.found&quot;;
+    public static final String USERNAME_NOT_EXISTS = &quot;username.not.exists&quot;;
+    public static final String USERNAME_EXISTS = &quot;username.exists&quot;;
+    public static final String EMAIL_NOT_VERIFIED= &quot;email.not.verified&quot;;
+    public static final String USER_ALREADY_VERIFIED=&quot;user.already.verified&quot;;
+    public static final String EMAIL_EXISTS=&quot;email.exists&quot;;
+    public static final String ACCOUNT_NOT_ACTIVE = &quot;account.not.active&quot;;
+    public static final String ROLE_CODE_EXISTED=&quot;role.code.existed&quot;;
+    public static final String MENU_NOT_FOUND=&quot;menu.not.found&quot;;
+    public static final String CANNOT_DELETE_ROLE=&quot;cannot.delete.role&quot;;
+    public static final String LOGO_REQUIRE=&quot;logo.require&quot;;
+    public static final String ACCOUNT_REGISTERED_AS_ORG_MEMBER=&quot;account.registered.as.org.member&quot;;
+    public static final String USER_JOINED_ORG=&quot;user.joined.org&quot;;
+    public static final String USER_BELONG_TO_ANOTHER_ORG=&quot;user.belong.to.another.org&quot;;
+    public static final String ORG_MUST_HAVE_AT_LEAST_ONE_ADMIN=&quot;org.must.have.at.least.one.admin&quot;;
+    public static final String REGISTER_THIRD_PARTY=&quot;register.third.party&quot;;
+    public static final String CURRENT_PASSWORD_INCORRECT=&quot;current.password.incorrect&quot;;
+    public static final String IMAGE_FILE_INVALID = &quot;image.file.invalid&quot;;
+    public static final String DOCUMENT_FILE_INVALID = &quot;document.file.invalid&quot;;
+    public static final String USER_ALREADY_HAS_ROLE = &quot;user.already.has.role&quot;;
+    public static final String USER_DOES_NOT_HAVE_ROLE = &quot;user.does.not.have.role&quot;;
+    public static final String LAST_SYSTEM_ADMIN_CANNOT_BE_REMOVED = &quot;last.system.admin.cannot.be.removed&quot;;
+    public static final String CANNOT_REMOVE_OWN_SYSTEM_ADMIN_ROLE = &quot;cannot.remove.own.system.admin.role&quot;;
+    public static final String USER_NOT_PHONE_NUMBER = &quot;user.not.phone.number&quot;;
+    public static final String ORG_ADDRESS_AT_LEAST_ONE = &quot;org.address.at.least.one&quot;;
+
+    /*
+     * Validation messages
+     * */
+    public static final String LOGIN_USERNAME_REQUIRE=&quot;login.username.require&quot;;
+    public static final String LOGIN_PASSWORD_REQUIRE=&quot;login.password.require&quot;;
+    public static final String REGISTER_USERNAME_REQUIRE=&quot;register.username.require&quot;;
+    public static final String REGISTER_PASSWORD_REQUIRE=&quot;register.password.require&quot;;
+    public static final String REGISTER_FULL_NAME_REQUIRE=&quot;register.full.name.require&quot;;
+    public static final String REGISTER_EMAIL_REQUIRE=&quot;register.email.require&quot;;
+    public static final String REGISTER_USERNAME_INVALID=&quot;register.username.invalid&quot;;
+    public static final String REGISTER_PASSWORD_INVALID=&quot;register.password.invalid&quot;;
+    public static final String REGISTER_PHONE_INVALID=&quot;register.phone.invalid&quot;;
+    public static final String REGISTER_EMAIL_INVALID=&quot;register.email.invalid&quot;;
+    public static final String ROLE_CODE_NOT_BLANK=&quot;role.code.not.blank&quot;;
+    public static final String ROLE_NAME_NOT_BLANK=&quot;role.name.not.blank&quot;;
+    public static final String ROLE_MEMBER_TYPE_NOT_BLANK=&quot;role.memberType.not.blank&quot;;
+    public static final String TOKEN_REQUIRE = &quot;token.require&quot;;
+    public static final String ORG_NAME_REQUIRE = &quot;org.name.require&quot;;
+    public static final String PROVINCE_REQUIRE = &quot;org.address.province.require&quot;;
+    public static final String DETAIL_ADDRESS_REQUIRE = &quot;org.address.detailAddress.require&quot;;
+    public static final String INVITE_NOT_FOUND = &quot;invite.not.found&quot;;
+    public static final String STATUS_NOT_BLANK = &quot;status.not.blank&quot;;
+    public static final String CURRENT_PASSWORD_REQUIRED = &quot;current.password.required&quot;;
+    public static final String NEW_PASSWORD_REQUIRED = &quot;new.password.required&quot;;
+
+    /*
+     * Other messages
+     * */
+    public static final String LOGIN_SUCCESS = &quot;login.success&quot;;
+    public static final String REGISTER_SUCCESS=&quot;register.success&quot;;
+    public static final String VERIFY_EMAIL_SUCCESS=&quot;verify.email.success&quot;;
+    public static final String CREATE_ROLES_SUCCESS=&quot;create.roles.success&quot;;
+    public static final String REQUEST_RESET_PASSWORD_SUCCESS=&quot;request.reset.password.success&quot;;
+    public static final String RESET_PASSWORD_SUCCESS=&quot;reset.password.success&quot;;
+    public static final String REQUEST_RESEND_VERIFY_EMAIL_SUCCESS=&quot;request.resend.verify.email.success&quot;;
+    public static final String SEND_INVITE_SUCCESS=&quot;send.invite.success&quot;;
+
+
+    /*
+    * Notification messages
+    * */
+    public static final String NEW_MEMBER_JOINED_ORG_TITLE = &quot;&lt;strong&gt;Doanh nghiá»‡p cá»§a báº¡n cÃ³ thÃ nh viÃªn má»›i&lt;/strong&gt;&quot;;
+    public static final String NEW_MEMBER_JOINED_ORG_MESSAGE = &quot;&lt;strong&gt;%s&lt;/strong&gt; Ä‘Ã£ tham gia doanh nghiá»‡p vá»›i vai trÃ² &lt;strong&gt;%s&lt;/strong&gt;&quot;;
+    public static final String NEW_ORGANIZATION_CREATED_TITLE = &quot;&lt;strong&gt;Doanh nghiá»‡p má»›i Ä‘Æ°á»£c táº¡o&lt;/strong&gt;&quot;;
+    public static final String NEW_ORGANIZATION_CREATED_MESSAGE = &quot;Doanh nghiá»‡p &lt;strong&gt;%s&lt;/strong&gt; vá»«a Ä‘Æ°á»£c táº¡o bá»Ÿi &lt;strong&gt;%s&lt;/strong&gt;&quot;;
+    public static final String REJECTED_INVITE_JOIN_ORG_TITLE = &quot;&lt;strong&gt;Tá»« chá»‘i Lá»�i má»�i tham gia doanh nghiá»‡p&lt;/strong&gt;&quot;;
+    public static final String REJECTED_INVITE_JOIN_ORG_MESSAGE = &quot;&lt;strong&gt;%s&lt;/strong&gt; Ä‘Ã£ tá»« chá»‘i lá»�i má»�i tham gia doanh nghiá»‡p cá»§a báº¡n.&quot;;
+    public static final String ACTIVE_ORG_MEMBER_TITLE = &quot;&lt;strong&gt;TÃ i khoáº£n thÃ nh viÃªn doanh nghiá»‡p cá»§a báº¡n Ä‘Ã£ Ä‘Æ°á»£c kÃ­ch hoáº¡t trá»Ÿ láº¡i&lt;/strong&gt;&quot;;
+    public static final String ACTIVE_ORG_MEMBER_MESSAGE = &quot;TÃ i khoáº£n thÃ nh viÃªn trong doanh nghiá»‡p &lt;strong&gt;%s&lt;/strong&gt; cá»§a báº¡n Ä‘Ã£ Ä‘Æ°á»£c kÃ­ch hoáº¡t trá»Ÿ láº¡i.&quot;;
+    public static final String DEACTIVE_ORG_MEMBER_TITLE = &quot;&lt;strong&gt;TÃ i khoáº£n thÃ nh viÃªn doanh nghiá»‡p cá»§a báº¡n Ä‘Ã£ bá»‹ khÃ³a&lt;/strong&gt;&quot;;
+    public static final String DEACTIVE_ORG_MEMBER_MESSAGE = &quot;TÃ i khoáº£n thÃ nh viÃªn trong doanh nghiá»‡p &lt;strong&gt;%s&lt;/strong&gt; cá»§a báº¡n Ä‘Ã£ bá»‹ khÃ³a.&quot;;
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

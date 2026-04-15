@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RoleUserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JaCoCo Coverage Report</a> &gt; <a href="index.source.html" class="el_package">com.cvconnect.service.impl</a> &gt; <span class="el_source">RoleUserServiceImpl.java</span></div><h1>RoleUserServiceImpl.java</h1><pre class="source lang-java linenums">package com.cvconnect.service.impl;
+
+import com.cvconnect.dto.orgMember.OrgMemberDto;
+import com.cvconnect.dto.roleUser.RoleUserDto;
+import com.cvconnect.dto.roleUser.RoleUserProjection;
+import com.cvconnect.dto.role.RoleDto;
+import com.cvconnect.entity.RoleUser;
+import com.cvconnect.enums.MemberType;
+import com.cvconnect.repository.RoleUserRepository;
+import com.cvconnect.service.OrgMemberService;
+import com.cvconnect.service.RoleUserService;
+import nmquan.commonlib.utils.ObjectMapperUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+<span class="nc" id="L21">public class RoleUserServiceImpl implements RoleUserService {</span>
+    @Autowired
+    private RoleUserRepository roleUserRepository;
+    @Lazy
+    @Autowired
+    private OrgMemberService orgMemberService;
+
+    @Override
+    public void createRoleUser(RoleUserDto dto) {
+<span class="nc" id="L30">        RoleUser roleUser = new RoleUser();</span>
+<span class="nc" id="L31">        roleUser.setUserId(dto.getUserId());</span>
+<span class="nc" id="L32">        roleUser.setRoleId(dto.getRoleId());</span>
+<span class="nc" id="L33">        roleUserRepository.save(roleUser);</span>
+<span class="nc" id="L34">    }</span>
+
+    @Override
+    public RoleUserDto findByUserIdAndRoleId(Long userId, Long roleId) {
+<span class="nc" id="L38">        RoleUser roleUser = roleUserRepository.findByUserIdAndRoleId(userId, roleId);</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if(roleUser == null) {</span>
+<span class="nc" id="L40">            return null;</span>
+        }
+<span class="nc" id="L42">        return RoleUserDto.builder()</span>
+<span class="nc" id="L43">                .id(roleUser.getId())</span>
+<span class="nc" id="L44">                .userId(roleUser.getUserId())</span>
+<span class="nc" id="L45">                .roleId(roleUser.getRoleId())</span>
+<span class="nc" id="L46">                .build();</span>
+    }
+
+    @Override
+    public List&lt;RoleUserDto&gt; findRoleUseByUserId(Long userId) {
+<span class="nc" id="L51">        OrgMemberDto orgMember = orgMemberService.getOrgMember(userId);</span>
+<span class="nc" id="L52">        List&lt;RoleUserProjection&gt; roleUsers = roleUserRepository.findRoleUseByUserId(List.of(userId));</span>
+<span class="nc" id="L53">        return roleUsers.stream()</span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">                .filter(roleUser -&gt; orgMember != null || !MemberType.ORGANIZATION.name().equals(roleUser.getMemberType()))</span>
+<span class="nc" id="L55">                .map(projection -&gt; RoleUserDto.builder()</span>
+<span class="nc" id="L56">                        .id(projection.getId())</span>
+<span class="nc" id="L57">                        .role(RoleDto.builder()</span>
+<span class="nc" id="L58">                                .id(projection.getRoleId())</span>
+<span class="nc" id="L59">                                .code(projection.getRoleCode())</span>
+<span class="nc" id="L60">                                .name(projection.getRoleName())</span>
+<span class="nc" id="L61">                                .isDefault(projection.getIsDefault())</span>
+<span class="nc" id="L62">                                .build())</span>
+<span class="nc" id="L63">                        .build()</span>
+<span class="nc" id="L64">                ).collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;RoleUserDto&gt; findByUserId(Long userId) {
+<span class="nc" id="L69">        List&lt;RoleUser&gt; roleUsers = roleUserRepository.findByUserId(userId);</span>
+<span class="nc" id="L70">        return ObjectMapperUtils.convertToList(roleUsers, RoleUserDto.class);</span>
+    }
+
+    @Override
+    public void saveList(List&lt;RoleUserDto&gt; roleUserDtos) {
+<span class="nc" id="L75">        List&lt;RoleUser&gt; roleUsers = ObjectMapperUtils.convertToList(roleUserDtos, RoleUser.class);</span>
+<span class="nc" id="L76">        roleUserRepository.saveAll(roleUsers);</span>
+<span class="nc" id="L77">    }</span>
+
+    @Override
+    public List&lt;RoleUserDto&gt; getRolesByUserIds(List&lt;Long&gt; userIds) {
+<span class="nc" id="L81">        List&lt;RoleUserProjection&gt; roleUsers = roleUserRepository.findRoleUseByUserId(userIds);</span>
+<span class="nc" id="L82">        return roleUsers.stream()</span>
+<span class="nc" id="L83">                .map(projection -&gt; RoleUserDto.builder()</span>
+<span class="nc" id="L84">                        .id(projection.getId())</span>
+<span class="nc" id="L85">                        .userId(projection.getUserId())</span>
+<span class="nc" id="L86">                        .roleId(projection.getRoleId())</span>
+<span class="nc" id="L87">                        .isDefault(projection.getIsDefault())</span>
+<span class="nc" id="L88">                        .role(RoleDto.builder()</span>
+<span class="nc" id="L89">                                .id(projection.getRoleId())</span>
+<span class="nc" id="L90">                                .code(projection.getRoleCode())</span>
+<span class="nc" id="L91">                                .name(projection.getRoleName())</span>
+<span class="nc" id="L92">                                .memberType(MemberType.valueOf(projection.getMemberType()))</span>
+<span class="nc" id="L93">                                .build())</span>
+<span class="nc" id="L94">                        .build()</span>
+<span class="nc" id="L95">                ).collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public void deleteByUserIdAndRoleIds(Long userId, List&lt;Long&gt; roleIds) {
+<span class="nc" id="L100">        roleUserRepository.deleteByUserIdAndRoleIds(userId, roleIds);</span>
+<span class="nc" id="L101">    }</span>
+
+    @Override
+    public boolean existsUserActiveByRoleId(Long roleId) {
+<span class="nc" id="L105">        return roleUserRepository.existsUserActiveByRoleId(roleId);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
