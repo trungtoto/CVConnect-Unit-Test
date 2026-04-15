@@ -22,6 +22,7 @@ Project: CVConnect
 Test classes implemented:
 - `com.cvconnect.notifyservice.service.NotifyServiceTest`
 - `com.cvconnect.notifyservice.repository.NotifyRepositoryTest`
+- `com.cvconnect.notifyservice.entity.NotificationTest`
 
 ### Files / Classes that do not need direct unit tests (for this phase)
 - `dto/*`: data carriers, low branching logic.
@@ -35,6 +36,9 @@ Test classes implemented:
   - `notify-tests/UNIT_TEST_CASE_MATRIX_NOTIFY_SERVICE_2026-04-15.csv`
 - Table fields used per requirement:
   - Test Case ID / Test Objective / Input / Expected Output / Notes
+- Added test cases:
+  - `TC_Notify_03`: default constructor + setters
+  - `TC_Notify_04`: all-args constructor mapping
 
 ## 1.4 Project Link
 - Repository URL: https://github.com/trungtoto/CVConnect-Unit-Test.git
@@ -48,8 +52,12 @@ mvn -f "D:\CVConnect\CVConnect-Unit-Test\notify-tests\pom.xml" test
 ```
 
 ### Result summary (current environment)
-- Local check in this environment could not execute Maven because `mvn` was not available in PATH.
-- Please run the command above on your machine to collect final pass/fail counts.
+- Verified using local Maven binary (`D:\tools\apache-maven-3.9.9\bin\mvn.cmd`).
+- Tests run: 4
+- Failures: 0
+- Errors: 0
+- Skipped: 0
+- Status: PASS
 
 ### Screenshot evidence to attach
 - Console output of Maven test run
@@ -61,6 +69,18 @@ mvn -f "D:\CVConnect\CVConnect-Unit-Test\notify-tests\pom.xml" test
 ```powershell
 mvn -f "D:\CVConnect\CVConnect-Unit-Test\notify-tests\pom.xml" test jacoco:report
 ```
+
+### Coverage gate configuration
+- `notify-tests/pom.xml` is configured with `jacoco-maven-plugin` check rule:
+  - `LINE` `COVEREDRATIO` minimum `0.70`
+- This means Maven test phase will fail if line coverage is below 70%.
+
+### Coverage summary (verified from `notify-service/target/site/jacoco/jacoco.xml`)
+- Instruction: 62 / 62 = 100.00%
+- Line: 24 / 24 = 100.00%
+- Method: 12 / 12 = 100.00%
+- Class: 2 / 2 = 100.00%
+- Coverage requirement `>= 70%` is satisfied.
 
 ### Expected coverage artifacts
 - `notify-tests/target/jacoco.exec`
@@ -89,4 +109,5 @@ mvn -f "D:\CVConnect\CVConnect-Unit-Test\notify-tests\pom.xml" test jacoco:repor
 - CheckDB is implemented in repository test by `save()` then `findById()` verification.
 - Rollback is enforced with class-level `@Transactional` in repository test.
 - Comments are kept concise to explain non-obvious assertions.
+- Coverage threshold enforcement is configured at 70% line coverage.
 
