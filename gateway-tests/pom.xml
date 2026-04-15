@@ -43,9 +43,9 @@
                 <configuration>
                     <dataFile>${project.build.directory}/jacoco.exec</dataFile>
                     <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
-                    <classesDirectory>${project.basedir}/../../api-gateway/target/classes</classesDirectory>
+                    <classesDirectory>${cvconnect.source.dir}/api-gateway/target/classes</classesDirectory>
                     <sourceDirectories>
-                        <sourceDirectory>${project.basedir}/../../api-gateway/src/main/java</sourceDirectory>
+                        <sourceDirectory>${cvconnect.source.dir}/api-gateway/src/main/java</sourceDirectory>
                     </sourceDirectories>
                 </configuration>
                 <executions>
