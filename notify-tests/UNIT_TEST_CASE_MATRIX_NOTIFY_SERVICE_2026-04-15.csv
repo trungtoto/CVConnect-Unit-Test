@@ -1,0 +1,4 @@
+Test Case ID,Test Objective,Input,Expected Output,Notes
+TC_Notify_01,Verify NotifyService creates and saves notification,userId=1001; message=Interview scheduled; status=SENT,Service returns saved Notification and repository save() called once,Mockito unit test no real DB
+TC_Notify_02,Verify NotifyRepository persists entity to database,Notification(userId=2002,message=Profile approved,status=NEW),save() returns entity with generated id and findById() can read same values back,CheckDB by findById plus class-level @Transactional rollback
+

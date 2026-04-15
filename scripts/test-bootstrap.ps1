@@ -33,8 +33,8 @@ if (-not (Test-Path $sourceRoot)) {
 }
 
 # Step 2: Build CVConnect main services
-Write-Host "`n[2/4] Building core-service, api-gateway, user-service..." -ForegroundColor Cyan
-& mvn -f "$sourceRoot/BE/pom.xml" -pl core-service,api-gateway,user-service clean install -DskipTests=true
+Write-Host "`n[2/4] Building core-service, api-gateway, user-service, notify-service..." -ForegroundColor Cyan
+& mvn -f "$sourceRoot/BE/pom.xml" -pl core-service,api-gateway,user-service,notify-service clean install -DskipTests=true
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to build CVConnect services"
 }

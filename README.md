@@ -8,6 +8,7 @@ Repo này chứa toàn bộ unit tests cho dự án CVConnect và có thể ch�
 core-tests/      - Unit tests cho core-service
 gateway-tests/   - Unit tests cho api-gateway
 user-tests/      - Unit tests cho user-service
+notify-tests/    - Unit tests cho notify-service
 scripts/         - Bootstrap scripts để clone dependency
 ```
 
@@ -53,7 +54,7 @@ Nếu muốn chạy từng bước:
 git clone --branch master https://github.com/trungtoto/CVConnect.git .cvconnect-source
 
 # 2. Build các service chính (bỏ qua tests)
-mvn -f .cvconnect-source/BE/pom.xml -pl core-service,api-gateway,user-service clean install -DskipTests=true
+mvn -f .cvconnect-source/BE/pom.xml -pl core-service,api-gateway,user-service,notify-service clean install -DskipTests=true
 
 # 3. Chạy unit tests
 mvn clean test
@@ -64,7 +65,7 @@ mvn clean test
 Script `test-bootstrap.ps1` / `test-bootstrap.sh` làm 3 việc:
 
 1. **Clone source**: Clone CVConnect repo (nếu chưa có) vào thư mục `.cvconnect-source/`
-2. **Build dependencies**: Compile core-service, api-gateway, user-service để test có thể import
+2. **Build dependencies**: Compile core-service, api-gateway, user-service, notify-service để test có thể import
 3. **Run tests**: Chạy `mvn test` trên tất cả test modules
 
 ## Cấu hình tùy chỉnh
@@ -90,7 +91,7 @@ mvn -Dcvconnect.source.dir=/path/to/CVConnect/BE clean test
 
 **Giải pháp**: 
 - Đảm bảo đã chạy script bootstrap trước
-- Hoặc build thủ công: `mvn -f .cvconnect-source/BE/pom.xml -pl core-service,api-gateway,user-service clean install -DskipTests=true`
+- Hoặc build thủ công: `mvn -f .cvconnect-source/BE/pom.xml -pl core-service,api-gateway,user-service,notify-service clean install -DskipTests=true`
 
 ### 2. "Jacoco report failed"
 
@@ -112,7 +113,7 @@ bash scripts/test-bootstrap.sh
 Sau khi sửa file test, commit như bình thường:
 
 ```bash
-git add core-tests/ gateway-tests/ user-tests/
+git add core-tests/ gateway-tests/ user-tests/ notify-tests/
 git commit -m "Fix test XYZ"
 git push
 ```

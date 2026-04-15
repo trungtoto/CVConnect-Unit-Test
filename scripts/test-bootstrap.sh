@@ -32,8 +32,8 @@ fi
 
 # Step 2: Build CVConnect main services
 echo ""
-echo "[2/4] Building core-service, api-gateway, user-service..."
-mvn -f "$SOURCE_ROOT/BE/pom.xml" -pl core-service,api-gateway,user-service clean install -DskipTests=true
+echo "[2/4] Building core-service, api-gateway, user-service, notify-service..."
+mvn -f "$SOURCE_ROOT/BE/pom.xml" -pl core-service,api-gateway,user-service,notify-service clean install -DskipTests=true
 
 # Step 3: Run tests with Maven
 echo ""

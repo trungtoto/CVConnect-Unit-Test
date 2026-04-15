@@ -58,6 +58,7 @@
         <module>core-tests</module>
         <module>gateway-tests</module>
         <module>user-tests</module>
+        <module>notify-tests</module>
     </modules>
 
 </project>
